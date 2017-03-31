@@ -7,13 +7,12 @@
  * Pin 2			: DATA
  * Pin 4			: RESET
  */
-#include <stdint.h>
 #include <string.h>
 #include <Mouse.h>
 #include "TrackPoint.h"
 
 static void handleSerialRequest(void);
-static void responseSerialNoData(uint8_t);
+static void responseSerialNoData(byte);
 
 #define DATA		2
 #define	CLOCK		3
@@ -34,22 +33,22 @@ struct Config
 #define SERIAL_FRAME_HEADLEN		4
 #define SERIAL_FRAME_LEADBYTE		0xe5u
 
-#define FLAG_REQUEST				0
-#define FLAG_OK						1
-#define FLAG_BAD_FRAME				2
-#define FLAG_BAD_OPCODE				3
-#define FLAG_BAD_PARAMS				4
-#define FLAG_INTERNAL_ERROR			5
+#define SERIAL_REQUEST				0
+#define SERIAL_OK					1
+#define SERIAL_BAD_FRAME			2
+#define SERIAL_BAD_OPCODE			3
+#define SERIAL_BAD_PARAMS			4
+#define SERIAL_INTERNAL_ERROR		5
 
 struct SerialFrame
 {
 	/** for tx: leadbyte; for rx: current state */
-	uint8_t leadbyte_currstate;
-	uint8_t opcode;
-	uint8_t datalen;
+	byte leadbyte_currstate;
+	byte opcode;
+	byte datalen;
 	/** for tx: flags; for rx: current received bytes */
-	uint8_t flags_rxlen;
-	uint8_t data[SERIAL_FRAME_MAXSIZE - SERIAL_FRAME_HEADLEN];
+	byte flags_rxlen;
+	byte data[SERIAL_FRAME_MAX_DATALEN];
 };
 
 enum SERIAL_STATE_DEF
@@ -96,6 +95,8 @@ void setup()
 	delay(1000);
 	attachInterrupt(CLOCK_INT, clockInterrupt, FALLING);
 	digitalWrite(LED_BUILTIN, LOW);
+
+	Serial.println("TrackPoint Started.");
 }
 
 void loop()
@@ -114,7 +115,8 @@ void loop()
 	} 
 
 	if (Serial.available() > 0) {
-		uint8_t inChar = (uint8_t) Serial.read();
+		byte inChar = (byte) Serial.read();
+		byte rxlen = 0;
 		switch (mSerialFrame.leadbyte_currstate) {
 			case SERIAL_PENDING:
 				if (inChar == SERIAL_FRAME_LEADBYTE) {
@@ -140,7 +142,7 @@ void loop()
 				mSerialFrame.leadbyte_currstate = SERIAL_RXDATA;
 				break;
 			case SERIAL_RXDATA:
-				uint8_t rxlen = mSerialFrame.flags_rxlen;
+				rxlen = mSerialFrame.flags_rxlen;
 				mSerialFrame.data[rxlen++] = inChar;
 				if (rxlen >= mSerialFrame.datalen) {
 					/* rx frame completed */
@@ -171,8 +173,8 @@ static void handleSerialRequest(void)
 				memcpy(mSerialFrame.data, &mConfig, sizeof(mConfig));
 				mSerialFrame.leadbyte_currstate = SERIAL_FRAME_LEADBYTE;
 				mSerialFrame.datalen = sizeof(mConfig);
-				mSerialFrame.flags = SERIAL_OK;
-				Serial.write(&mSerialFrame, SERIAL_FRAME_HEADLEN + sizeof(mConfig));
+				mSerialFrame.flags_rxlen = SERIAL_OK;
+				Serial.write((byte *) &mSerialFrame, SERIAL_FRAME_HEADLEN + sizeof(mConfig));
 			}
 			break;
 		case OPCODE_SET_CONFIG:
@@ -189,11 +191,11 @@ static void handleSerialRequest(void)
 	}
 }
 
-static void responseSerialNoData(uint8_t flags)
+static void responseSerialNoData(byte flags)
 {
 	mSerialFrame.leadbyte_currstate = SERIAL_FRAME_LEADBYTE;
 	mSerialFrame.datalen = 0;
 	mSerialFrame.flags_rxlen = flags;
-	Serial.write(&mSerialFrame, SERIAL_FRAME_HEADLEN);
+	Serial.write((byte *) &mSerialFrame, SERIAL_FRAME_HEADLEN);
 }
 
