@@ -21,7 +21,7 @@ uint8_t SerialFrame_PutChar(struct SerialFrame *self, uint8_t inChar)
 	uint8_t rxlen = 0;
 	switch (self->leadbyte_currstate) {
 		case STATE_PENDING:
-			if (inChar == SERIAL_FRAME_LEADBYTE) {
+			if (inChar == SERIALFRAME_LEADBYTE) {
 				self->leadbyte_currstate = STATE_START_1;
 			}
 			break;

@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-#define SERIAL_FRAME_MAX_DATALEN	32
-#define SERIAL_FRAME_HEADLEN		4
-#define SERIAL_FRAME_LEADBYTE		0xe5u
+#define SERIALFRAME_MAX_DATALEN	32
+#define SERIALFRAME_HEADLEN		4
+#define SERIALFRAME_LEADBYTE		0xe5u
 
 enum SerialFrameErrCode
 {
@@ -25,7 +25,7 @@ struct SerialFrame
 	uint8_t datalen;
 	/** for tx: flags; for rx: current received uint8_ts */
 	uint8_t flags_rxlen;
-	uint8_t data[SERIAL_FRAME_MAX_DATALEN];
+	uint8_t data[SERIALFRAME_MAX_DATALEN];
 };
 
 void SerialFrame_Init(struct SerialFrame *self);
