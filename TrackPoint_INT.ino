@@ -13,20 +13,31 @@
 
 static void handleSerialRequest(void);
 static void responseSerialNoData(byte);
+static void sendButtonState(byte state);
 
-#define DATA		2
-#define	CLOCK		3
-#define RESET		4
-#define CLOCK_INT	0
+#define DATA						2
+#define	CLOCK						3
+#define RESET						4
+#define CLOCK_INT					0
+
+#define TP_MOUSE_LEFT				0x04u
+#define TP_MOUSE_RIGHT				0x08u
+#define TP_MOUSE_MIDDLE				0x02u
 
 #define OPCODE_GET_CONFIG			1
 #define OPCODE_SET_CONFIG			2
+#define OPCODE_ECHO					3
 
 struct Config
 {
-	/** trackpoint.move(x, y) => (x + i y) * (rotation_real + i rotation_imag) = (x_1 + i y_1) => mouse.move(x_1, y_1)  */
-	float rotation_real;
-	float rotation_imag;
+	int8_t debug_enabled;
+	int8_t reserve;
+	int8_t x_direction;
+	int8_t y_direction;
+	float x_positive_scale;
+	float x_negative_scale;
+	float y_positive_scale;
+	float y_negative_scale;
 };
 
 #define SERIAL_FRAME_MAX_DATALEN	32
@@ -68,8 +79,13 @@ void setup()
 {	
 	mSerialFrame.leadbyte_currstate = SERIAL_PENDING;
 
-	mConfig.rotation_real = 1.0f;
-	mConfig.rotation_imag = 0.0f;
+	mConfig.debug_enabled = 1;
+	mConfig.x_direction = -1;
+	mConfig.y_direction = 1;
+	mConfig.x_positive_scale = 1.0f;
+	mConfig.x_negative_scale = 1.0f;
+	mConfig.y_positive_scale = 1.0f;
+	mConfig.y_negative_scale = 1.0f;
 
 	Serial.begin(9600);
 
@@ -96,22 +112,67 @@ void setup()
 	attachInterrupt(CLOCK_INT, clockInterrupt, FALLING);
 	digitalWrite(LED_BUILTIN, LOW);
 
-	Serial.println("TrackPoint Started.");
+	if (mConfig.debug_enabled) {
+		Serial.println("TrackPoint Started.");
+	}
 }
 
 void loop()
 {	
+	int8_t debug_enabled = mConfig.debug_enabled;
+
 	if (trackpoint.reportAvailable()) {
-		float real, imag;
-
-		real = mConfig.rotation_real;
-		imag = mConfig.rotation_imag;
-
+		char buffer[128];
 		TrackPoint::DataReport d = trackpoint.getStreamReport();
-		Mouse.move(
-			d.x * real - d.y * imag, 
-			d.x * imag + d.y * real, 
-			0);
+		byte state = d.state;
+
+		if (debug_enabled) {
+			sprintf(buffer, "state: 0x%02x, (%d, %d)\r\n", d.state, d.x, d.y);
+			Serial.print(buffer);
+		}
+
+		if ((state & TP_MOUSE_LEFT) == TP_MOUSE_LEFT) {
+			if (debug_enabled) {
+				Serial.println("press left");
+			}
+			Mouse.press(MOUSE_LEFT);
+		} else if ((state & TP_MOUSE_RIGHT) == TP_MOUSE_RIGHT) {
+			if (debug_enabled) {
+				Serial.println("press right");
+			}
+			Mouse.press(MOUSE_RIGHT);
+		} else if ((state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
+			if (debug_enabled) {
+				Serial.println("scroll");
+			}
+			Mouse.move(0, 0, -d.y);
+		} else if (Mouse.isPressed(MOUSE_LEFT)) {
+			if (debug_enabled) {
+				Serial.println("release left");
+			}
+			Mouse.release(MOUSE_LEFT);
+		} else if (Mouse.isPressed(MOUSE_RIGHT)) {
+			if (debug_enabled) {
+				Serial.println("release right");
+			}
+			Mouse.release(MOUSE_RIGHT);
+		} else {
+			int8_t dx, dy;
+
+			dx = d.x * mConfig.x_direction;
+			dy = d.y * mConfig.y_direction;
+			if (dx > 0) {
+				dx = (int8_t) (((float) dx) * mConfig.x_positive_scale);
+			} else {
+				dx = (int8_t) (((float) dx) * mConfig.x_negative_scale);
+			}
+			if (dy > 0) {
+				dy = (int8_t) (((float) dy) * mConfig.y_positive_scale);
+			} else {
+				dy = (int8_t) (((float) dy) * mConfig.y_negative_scale);
+			}
+			Mouse.move(dx, dy, 0);
+		}
 	} 
 
 	if (Serial.available() > 0) {
@@ -185,6 +246,11 @@ static void handleSerialRequest(void)
 				responseSerialNoData(SERIAL_OK);
 			}
 			break;
+		case OPCODE_ECHO:
+			mSerialFrame.leadbyte_currstate = SERIAL_FRAME_LEADBYTE;
+			mSerialFrame.flags_rxlen = SERIAL_OK;
+			Serial.write((byte *) &mSerialFrame, mSerialFrame.datalen);
+			break;
 		default:
 			responseSerialNoData(SERIAL_BAD_OPCODE);
 			break;
@@ -197,5 +263,19 @@ static void responseSerialNoData(byte flags)
 	mSerialFrame.datalen = 0;
 	mSerialFrame.flags_rxlen = flags;
 	Serial.write((byte *) &mSerialFrame, SERIAL_FRAME_HEADLEN);
+}
+
+static void sendButtonState(byte state)
+{
+	static const byte hidStates[] = {MOUSE_LEFT, MOUSE_RIGHT};
+
+  	for (byte i = 0; i < sizeof(hidStates); i++) {
+		byte hidState = hidStates[i];
+  	  	if (state & (1 << i)) {
+			Mouse.press(hidState);
+  	  	} else if (Mouse.isPressed(hidState)) {
+			Mouse.release(hidState);
+  	  	}
+  	}
 }
 
