@@ -30,14 +30,14 @@ static void sendButtonState(byte state);
 
 struct Config
 {
-	int8_t debug_enabled;
-	int8_t reserve;
 	int8_t x_direction;
 	int8_t y_direction;
-	float x_positive_scale;
-	float x_negative_scale;
-	float y_positive_scale;
-	float y_negative_scale;
+	int8_t scroll_direction;
+	int8_t reserve;
+	float scale_left;
+	float scale_right;
+	float scale_up;
+	float scale_down;
 };
 
 #define SERIAL_FRAME_MAX_DATALEN	32
@@ -71,21 +71,15 @@ enum SERIAL_STATE_DEF
 };
 
 static struct SerialFrame mSerialFrame;
-static struct Config mConfig;
+
+static byte mDebugEnabled = 1;
+static struct Config mConfig = {-1, 1, -1, 0, 1.0f, 1.0f, 1.0f, 2.0f};
 
 TrackPoint trackpoint(CLOCK, DATA, RESET, true);
 
 void setup()
 {	
 	mSerialFrame.leadbyte_currstate = SERIAL_PENDING;
-
-	mConfig.debug_enabled = 1;
-	mConfig.x_direction = -1;
-	mConfig.y_direction = 1;
-	mConfig.x_positive_scale = 1.0f;
-	mConfig.x_negative_scale = 1.0f;
-	mConfig.y_positive_scale = 1.0f;
-	mConfig.y_negative_scale = 1.0f;
 
 	Serial.begin(9600);
 
@@ -112,69 +106,79 @@ void setup()
 	attachInterrupt(CLOCK_INT, clockInterrupt, FALLING);
 	digitalWrite(LED_BUILTIN, LOW);
 
-	if (mConfig.debug_enabled) {
-		Serial.println("TrackPoint Started.");
-	}
+	Serial.println("TrackPoint Started.");
 }
 
-void loop()
-{	
-	int8_t debug_enabled = mConfig.debug_enabled;
-
+static void handleTrackpointEvent(void)
+{
 	if (trackpoint.reportAvailable()) {
 		char buffer[128];
 		TrackPoint::DataReport d = trackpoint.getStreamReport();
 		byte state = d.state;
 
-		if (debug_enabled) {
+		if (mDebugEnabled) {
 			sprintf(buffer, "state: 0x%02x, (%d, %d)\r\n", d.state, d.x, d.y);
 			Serial.print(buffer);
 		}
 
-		if ((state & TP_MOUSE_LEFT) == TP_MOUSE_LEFT) {
-			if (debug_enabled) {
-				Serial.println("press left");
+		if (d.x == 0 && d.y == 0) {
+			if ((state & TP_MOUSE_LEFT) == TP_MOUSE_LEFT) {
+				if (mDebugEnabled) {
+					Serial.println("press left");
+				}
+				Mouse.press(MOUSE_LEFT);
+				return;
+			} else if (Mouse.isPressed(MOUSE_LEFT)) {
+				if (mDebugEnabled) {
+					Serial.println("release left");
+				}
+				Mouse.release(MOUSE_LEFT);
+				return;
 			}
-			Mouse.press(MOUSE_LEFT);
-		} else if ((state & TP_MOUSE_RIGHT) == TP_MOUSE_RIGHT) {
-			if (debug_enabled) {
-				Serial.println("press right");
-			}
-			Mouse.press(MOUSE_RIGHT);
-		} else if ((state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
-			if (debug_enabled) {
+
+			if ((state & TP_MOUSE_RIGHT) == TP_MOUSE_RIGHT) {
+				if (mDebugEnabled) {
+					Serial.println("press right");
+				}
+				Mouse.press(MOUSE_RIGHT);
+				return;
+			} else if (Mouse.isPressed(MOUSE_RIGHT)) {
+				if (mDebugEnabled) {
+					Serial.println("release right");
+				}
+				Mouse.release(MOUSE_RIGHT);
+				return;
+			} 
+		}
+
+		if ((state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
+			if (mDebugEnabled) {
 				Serial.println("scroll");
 			}
-			Mouse.move(0, 0, -d.y);
-		} else if (Mouse.isPressed(MOUSE_LEFT)) {
-			if (debug_enabled) {
-				Serial.println("release left");
-			}
-			Mouse.release(MOUSE_LEFT);
-		} else if (Mouse.isPressed(MOUSE_RIGHT)) {
-			if (debug_enabled) {
-				Serial.println("release right");
-			}
-			Mouse.release(MOUSE_RIGHT);
-		} else {
-			int8_t dx, dy;
-
-			dx = d.x * mConfig.x_direction;
-			dy = d.y * mConfig.y_direction;
-			if (dx > 0) {
-				dx = (int8_t) (((float) dx) * mConfig.x_positive_scale);
-			} else {
-				dx = (int8_t) (((float) dx) * mConfig.x_negative_scale);
-			}
-			if (dy > 0) {
-				dy = (int8_t) (((float) dy) * mConfig.y_positive_scale);
-			} else {
-				dy = (int8_t) (((float) dy) * mConfig.y_negative_scale);
-			}
-			Mouse.move(dx, dy, 0);
+			Mouse.move(0, 0, d.y * mConfig.scroll_direction);
+			return;
 		}
-	} 
 
+		int8_t dx, dy;
+
+		dx = d.x * mConfig.x_direction;
+		dy = d.y * mConfig.y_direction;
+		if (dx > 0) {
+			dx = (int8_t) (((float) dx) * mConfig.scale_left);
+		} else if (dx < 0) {
+			dx = (int8_t) (((float) dx) * mConfig.scale_right);
+		}
+		if (dy > 0) {
+			dy = (int8_t) (((float) dy) * mConfig.scale_up);
+		} else if (dy < 0) {
+			dy = (int8_t) (((float) dy) * mConfig.scale_down);
+		}
+		Mouse.move(dx, dy, 0);
+	} 
+}
+
+static void handleSerialFrame(void)
+{
 	if (Serial.available() > 0) {
 		byte inChar = (byte) Serial.read();
 		byte rxlen = 0;
@@ -218,6 +222,12 @@ void loop()
 				break;
 		}
 	}
+}
+
+void loop()
+{	
+	handleTrackpointEvent();
+	handleSerialFrame();
 }
 
 void clockInterrupt(void) {
