@@ -73,7 +73,7 @@ enum SERIAL_STATE_DEF
 static struct SerialFrame mSerialFrame;
 
 static byte mDebugEnabled = 1;
-static struct Config mConfig = {-1, 1, -1, 0, 1.0f, 1.0f, 1.0f, 2.0f};
+static struct Config mConfig = {-1, 1, -1, 0, 1.0f, 1.0f, 1.0f, 1.0f};
 
 TrackPoint trackpoint(CLOCK, DATA, RESET, true);
 
