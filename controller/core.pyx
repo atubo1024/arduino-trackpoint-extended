@@ -15,6 +15,8 @@ _CTYPE_TO_STRUCT_FMT = {
     'int'     : 'i',
     'int32_t' : 'l',
     'uint32_t': 'L',
+    'int16_t' : 'h',
+    'uint16_t': 'H',
     'int8_t'  : 'b',
     'uint8_t' : 'B',
 } 
@@ -131,5 +133,25 @@ def save_config(pyserial_instance, config):
     datastr = struct.pack(CONFIG_FMTSTR, *values)
     send_request(pyserial_instance, OPCODES['OPCODE_SET_CONFIG'], datastr)
     get_response(pyserial_instance, OPCODES['OPCODE_SET_CONFIG'])
+
+def test_mls(tlist, xlist, ylist, winsize=50):
+    cdef MovingLeaseSquare mls
+    cdef uint16_t buffer_time[1024]
+    cdef int16_t buffer_value[1024]
+
+    est_xlist = []
+    est_ylist = []
+    print '-----------------------'
+    MLS_Init(&mls, winsize, buffer_time, buffer_value)
+    for i in xrange(len(tlist)):
+        MLS_Append(&mls, tlist[i], xlist[i])
+        est_xlist.append(mls.current_value)
+    print '-----------------------'
+    MLS_Init(&mls, winsize, buffer_time, buffer_value)
+    for i in xrange(len(tlist)):
+        MLS_Append(&mls, tlist[i], ylist[i])
+        est_ylist.append(mls.current_value)
+
+    return est_xlist, est_ylist
 
 _init()

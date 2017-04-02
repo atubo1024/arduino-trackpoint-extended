@@ -8,7 +8,7 @@ setup(
     name = 'core',
     ext_modules = cythonize(Extension(
         'core', 
-        [ 'core.pyx', 'helper.c', '../serialframe.c' ], 
+        [ 'core.pyx', 'helper.c', '../serialframe.c', '../lease_square.c' ], 
     ))
 )
 

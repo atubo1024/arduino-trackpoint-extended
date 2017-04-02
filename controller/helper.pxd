@@ -34,8 +34,7 @@ cdef extern from '../lease_square.h':
     	MovingLeaseSquare *self, 
     	uint16_t  winsize, 
     	uint16_t *buffer_time, 
-    	int16_t  *buffer_value, 
-    	uint16_t  timeout_interval)
+    	int16_t  *buffer_value) 
     void MLS_RemoveTimeout(MovingLeaseSquare *self, uint16_t now)
     void MLS_Append(MovingLeaseSquare *self, uint16_t now, int16_t value)
 

@@ -127,10 +127,10 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         while True:
             datastr = core.get_response(self.__pyserial_instance, core.OPCODES['OPCODE_TP_DATA'])
             if datastr is not None:
-                data = struct.unpack('LBbb', datastr)
+                data = struct.unpack('Hbb', datastr)
                 datalist.append(data)
                 # stop if left buffer pressed
-                if data[1] == 0x14:
+                if data[1] == 0 and data[2] == 0:
                     break
         core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_STOP_TP_DUMP'])
         core.get_response(self.__pyserial_instance)
@@ -149,7 +149,7 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         y_sum = 0
         count = 0
         for data in datalist:
-            (time, state, x, y) = data
+            (time, x, y) = data
             x_sum += x
             y_sum += y
             count += 1
@@ -157,9 +157,14 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
             xlist.append(x_sum)
             ylist.append(y_sum)
             countlist.append(count)
-        plt.plot(tlist, xlist, 'g-', marker='+', label='x')
+        plt.plot(tlist, xlist, 'g-', marker='x', label='x')
         plt.plot(tlist, ylist, 'b-', marker='x', label='y')
         plt.plot(tlist, countlist, 'r-', label='count')
+
+        est_xlist, est_ylist = core.test_mls(tlist, xlist, ylist, winsize=20)
+        plt.plot(tlist, est_xlist, 'g+', label='est_x')
+        plt.plot(tlist, est_ylist, 'b+', label='est_y')
+
         plt.legend()
         plt.show()
 

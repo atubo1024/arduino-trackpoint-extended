@@ -17,6 +17,9 @@
 	ITEM(int8_t, y_direction,		1)		\
 	ITEM(int8_t, scroll_direction,	-1)		\
 	ITEM(int8_t, scroll_maxspeed,	5)		\
+	ITEM(int8_t, mls_enabled,		0)		\
+	ITEM(int8_t, reserve_1,			0)		\
+	ITEM(int16_t, reserve_2,		0)		\
 	ITEM(float,  scale_left,		1.0f)	\
 	ITEM(float,  scale_right,		1.0f)	\
 	ITEM(float,  scale_up,			1.0f)	\
@@ -44,8 +47,7 @@ enum OPCODE
 
 struct TrackPointDumpData
 {
-	uint32_t timestamp;
-	uint8_t  state;
+	uint16_t timestamp;
 	uint8_t  x;
 	uint8_t  y;
 };

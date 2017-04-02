@@ -31,8 +31,7 @@ static byte mDumping = 0;
 static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALUE) };
 static struct SerialFrame mSerialFrame;
 
-#define MLS_WINSIZE		50
-#define MLS_TIMEOUT_INTERVAL 100
+#define MLS_WINSIZE					10
 static uint16_t mBufferTimeX[MLS_WINSIZE];
 static int16_t mBufferValueX[MLS_WINSIZE];
 static uint16_t mBufferTimeY[MLS_WINSIZE];
@@ -46,8 +45,8 @@ TrackPoint trackpoint(CLOCK, DATA, RESET, true);
 void setup()
 {	
 	mInitTimestamp = millis();
-	MLS_Init(&mMlsX, MLS_WINSIZE, mBufferTimeX, mBufferValueX, MLS_TIMEOUT_INTERVAL);
-	MLS_Init(&mMlsY, MLS_WINSIZE, mBufferTimeY, mBufferValueY, MLS_TIMEOUT_INTERVAL);
+	MLS_Init(&mMlsX, MLS_WINSIZE, mBufferTimeX, mBufferValueX);
+	MLS_Init(&mMlsY, MLS_WINSIZE, mBufferTimeY, mBufferValueY);
 
 	SerialFrame_Init(&mSerialFrame);
 
@@ -93,8 +92,7 @@ static void handleTrackpointEvent(void)
 			mSerialFrame.opcode = OPCODE_TP_DATA;
 			mSerialFrame.flags = SERIALFRAME_ACK;
 			mSerialFrame.datalen = sizeof(struct TrackPointDumpData);
-			pData->timestamp = millis();
-			pData->state = state;
+			pData->timestamp = now;
 			pData->x = d.x;
 			pData->y = d.y;
 			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + sizeof(struct TrackPointDumpData));
@@ -154,15 +152,17 @@ static void handleTrackpointEvent(void)
 		dx = d.x * mConfig.x_direction;
 		dy = d.y * mConfig.y_direction;
 
-		int16_t current_value;
+		if (mConfig.mls_enabled) {
+			int16_t current_value;
 
-		current_value = mMlsX.current_value;
-		MLS_Append(&mMlsX, now, current_value + dx);
-		dx = mMlsX.current_value - current_value;
+			current_value = mMlsX.current_value;
+			MLS_Append(&mMlsX, now, current_value + dx);
+			dx = mMlsX.current_value - current_value;
 
-		current_value = mMlsY.current_value;
-		MLS_Append(&mMlsY, now, current_value + dy);
-		dy = mMlsY.current_value - current_value;
+			current_value = mMlsY.current_value;
+			MLS_Append(&mMlsY, now, current_value + dy);
+			dy = mMlsY.current_value - current_value;
+		}
 
 		if (dx < 0) {
 			dx = (int8_t) (((float) dx) * mConfig.scale_left);
@@ -177,10 +177,10 @@ static void handleTrackpointEvent(void)
 		Mouse.move(dx, dy, 0);
 	} 
 
-	MLS_RemoveTimeout(&mMlsX, now);
-	MLS_RemoveTimeout(&mMlsY, now);
-	if (mMlsX.count == 0 && mMlsY.count == 0) {
+	if (mConfig.mls_enabled && now - mMlsX.last_update_time > 1000) {
 		mInitTimestamp = millis();
+		MLS_Init(&mMlsX, MLS_WINSIZE, mBufferTimeX, mBufferValueX);
+		MLS_Init(&mMlsY, MLS_WINSIZE, mBufferTimeY, mBufferValueY);
 	}
 
 }

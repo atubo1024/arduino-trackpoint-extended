@@ -9,12 +9,12 @@ struct MovingLeaseSquare
 	int16_t  current_value;
 
 	uint16_t mWinSize;
-	uint16_t mTimeoutInterval;
+	uint16_t reverse;
+	uint16_t last_update_time;
+	uint16_t mBufferStartIndex;
 	uint16_t *mBufferTime;
 	int16_t  *mBufferVal;
 
-	uint16_t mBufferStartIndex;
-	uint16_t mLastUpdateTime;
 	float    mSumT;
 	float    mSumV;
 	float    mSumTT;
@@ -25,9 +25,7 @@ void MLS_Init(
 	struct MovingLeaseSquare *self, 
 	uint16_t  winsize, 
 	uint16_t *buffer_time, 
-	int16_t  *buffer_value, 
-	uint16_t  timeout_interval);
-void MLS_RemoveTimeout(struct MovingLeaseSquare *self, uint16_t now);
+	int16_t  *buffer_value);
 void MLS_Append(struct MovingLeaseSquare *self, uint16_t now, int16_t value);
 
 #endif		/* #ifndef __HAVE_LEASE_SQUARE_H */
