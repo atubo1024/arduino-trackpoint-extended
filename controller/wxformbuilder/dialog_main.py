@@ -56,6 +56,16 @@ class MainDialog ( wx.Dialog ):
 		
 		bSizer3.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
 		
+		self.m_button_reboot = wx.Button( self, wx.ID_ANY, u"重启", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button_reboot.Enable( False )
+		
+		bSizer3.Add( self.m_button_reboot, 0, wx.ALL, 5 )
+		
+		self.m_button_dump = wx.Button( self, wx.ID_ANY, u"Dump", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button_dump.Enable( False )
+		
+		bSizer3.Add( self.m_button_dump, 0, wx.ALL, 5 )
+		
 		self.m_button_saveconfig = wx.Button( self, wx.ID_ANY, u"保存配置", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_button_saveconfig.Enable( False )
 		
@@ -76,6 +86,8 @@ class MainDialog ( wx.Dialog ):
 		self.m_button_close.Bind( wx.EVT_BUTTON, self.OnBtnCloseSerialPort )
 		self.m_button3.Bind( wx.EVT_BUTTON, self.OnBtnRefreshSerialPorts )
 		self.m_checkbox_debug.Bind( wx.EVT_CHECKBOX, self.OnCheckBoxDebug )
+		self.m_button_reboot.Bind( wx.EVT_BUTTON, self.OnBtnReboot )
+		self.m_button_dump.Bind( wx.EVT_BUTTON, self.OnBtnDumping )
 		self.m_button_saveconfig.Bind( wx.EVT_BUTTON, self.OnBtnSaveConfig )
 	
 	def __del__( self ):
@@ -96,6 +108,12 @@ class MainDialog ( wx.Dialog ):
 		event.Skip()
 	
 	def OnCheckBoxDebug( self, event ):
+		event.Skip()
+	
+	def OnBtnReboot( self, event ):
+		event.Skip()
+	
+	def OnBtnDumping( self, event ):
 		event.Skip()
 	
 	def OnBtnSaveConfig( self, event ):

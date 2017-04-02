@@ -26,16 +26,19 @@ static void handleSerialRequest(void);
 #define TP_MOUSE_MIDDLE				0x02u
 
 static byte mDebugEnabled = 1;
+static byte mDumping = 0;
 static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALUE) };
 static struct SerialFrame mSerialFrame;
 
 TrackPoint trackpoint(CLOCK, DATA, RESET, true);
 
+void(* reboot) (void) = 0;
+
 void setup()
 {	
 	SerialFrame_Init(&mSerialFrame);
 
-	Serial.begin(9600);
+	Serial.begin(115200);
 
 	Mouse.begin();
 	pinMode(LED_BUILTIN, OUTPUT);
@@ -69,6 +72,16 @@ static void handleTrackpointEvent(void)
 		char buffer[128];
 		TrackPoint::DataReport d = trackpoint.getStreamReport();
 		byte state = d.state;
+		if (mDumping) {
+			mSerialFrame.opcode = OPCODE_TP_DATA;
+			mSerialFrame.flags = 0;
+			mSerialFrame.datalen = 7;
+			*((uint32_t *) mSerialFrame.data) = millis;
+			mSerialFrame.data[4] = state;
+			mSerialFrame.data[5] = d.x;
+			mSerialFrame.data[6] = d.y;
+			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + 7);
+		}
 
 		if (mDebugEnabled) {
 			sprintf(buffer, "state: 0x%02x, (%d, %d)\r\n", d.state, d.x, d.y);
@@ -175,6 +188,15 @@ static void handleSerialRequest(void)
 			mSerialFrame.leadbyte = SERIALFRAME_LEADBYTE;
 			mSerialFrame.flags = SERIALFRAME_ACK;
 			Serial.write((byte *) &mSerialFrame, mSerialFrame.datalen);
+			break;
+		case OPCODE_REBOOT:
+			reboot();
+			break;
+		case OPCODE_START_TP_DUMP:
+			mDumping = 1;
+			break;
+		case OPCODE_STOP_TP_DUMP:
+			mDumping = 0;
 			break;
 		default:
 			sendSerialFrameWithoutData(SERIALFRAME_BAD_OPCODE);

@@ -1,11 +1,13 @@
 #coding=utf-8
 
 import wx
-import wxformbuilder.dialog_main
 import serial.tools.list_ports
 import serial
-import core
 import logging
+from threading import Thread
+import wxformbuilder.dialog_main
+import core
+from mainthreadswitcher import run_in_mainthread, init_for_wxapp
 
 logging.basicConfig(level=logging.INFO)
 
@@ -28,7 +30,7 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
 
     def OnBtnOpenSerialPort(self, event):
         devname = self.__get_selected_serial_devname()
-        self.__pyserial_instance = serial.Serial(devname, timeout=None, baudrate=9600)
+        self.__pyserial_instance = serial.Serial(devname, timeout=None, baudrate=115200)
         config = core.get_config(self.__pyserial_instance)
         for key, val in config.iteritems():
             print '%s: %s' % (key, val)
@@ -39,6 +41,8 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         if self.__pyserial_instance is not None:
             self.__pyserial_instance.close()
             self.__pyserial_instance = None
+        self.__state = 'closed'
+        self.__on_state_changed()
 
     def OnBtnSaveConfig(self, event):
         pass
@@ -49,10 +53,25 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         else:
             logging.getLogger(None).setLevel(logging.INFO)
 
+    def OnBtnReboot(self, event):
+        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_REBOOT'], no_response=True)
+
+    def OnBtnDumping(self, event):
+        if self.__state == 'opened':
+            self.__state = 'dumping'
+            self.m_button_dump.SetLabel('Stop')
+            th = Thread(target=self.__dump_worker)
+            th.start()
+        else:
+            self.__state = 'opened'
+            self.m_button_dump.SetLabel('Dump')
+
     def __on_state_changed(self):
         self.m_button_open.Enable(self.__state == 'closed')
         self.m_button_close.Enable(self.__state != 'closed')
         self.m_button_saveconfig.Enable(self.__state != 'closed')
+        self.m_button_reboot.Enable(self.__state != 'closed')
+        self.m_button_dump.Enable(self.__state != 'closed')
 
     def __get_selected_serial_devname(self):
         index = self.m_choice_serialports.GetSelection()
@@ -85,8 +104,25 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         if select_index < len(ports):
             self.m_choice_serialports.SetSelection(select_index)
 
+    def __dump_worker(self):
+        datalist = []
+        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_START_TP_DUMP'])
+        while self.__state == 'dumping':
+            datastr = core.send_request(core.OPCODES['OPCODE_TP_DATA'], no_request=True)
+            data = struct.unpack('LBbb', datastr)
+            datalist.append(data)
+        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_STOP_TP_DUMP'])
+        self.__dump_completed(datalist)
+
+    @run_in_mainthread
+    def __dump_completed(self, datalist):
+        for data in datalist:
+            print data
+
+
 class App(wx.App):
     def OnInit(self):
+        init_for_wxapp(self)
         self.__maindialog = MainDialog(None)
         self.__maindialog.Show()
         self.SetTopWindow(self.__maindialog)

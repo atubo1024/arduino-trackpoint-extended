@@ -67,7 +67,7 @@ cdef int _GenerateSerialFrame(SerialFrame *pSerialFrame, uint8_t opcode, uint8_t
     
     return SERIALFRAME_HEADLEN + datalen
 
-def send_request(pyserial_instance, opcode, datastr):
+def send_request(pyserial_instance, opcode, datastr=None, no_request=False, no_response=False):
     """
     :return: datastr or raise Exception if fail
     """
@@ -78,36 +78,40 @@ def send_request(pyserial_instance, opcode, datastr):
     cdef uint8_t *pData
     cdef uint8_t datalen
 
-    # send request
-    if datastr is None:
-        pData = NULL
-        datalen = 0
-    else:
-        pData = datastr
-        datalen = len(datastr)
-    ret = _GenerateSerialFrame(&frame, opcode, pData, datalen);
-    assert(ret > 0);
-    pBuffer = <uint8_t *>(&frame)
-    for i from 0 <= i < ret:
-        logging.debug('tx: 0x%02x', pBuffer[i])
-        pyserial_instance.write(chr(pBuffer[i]))
+    if not no_request:
+        # send request
+        if datastr is None:
+            pData = NULL
+            datalen = 0
+        else:
+            pData = datastr
+            datalen = len(datastr)
+        ret = _GenerateSerialFrame(&frame, opcode, pData, datalen);
+        assert(ret > 0);
+        pBuffer = <uint8_t *>(&frame)
+        for i from 0 <= i < ret:
+            logging.debug('tx: 0x%02x', pBuffer[i])
+            pyserial_instance.write(chr(pBuffer[i]))
 
     # get response
-    SerialFrame_Init(&frame)
-    while True:
-        ch = pyserial_instance.read(1)
-        logging.debug('rx: 0x%02x', ord(ch))
-        if ch is not None and len(ch) == 1:
-            ret = SerialFrame_PutChar(&frame, ord(ch))
-            logging.debug('putchar return: %d', ret)
-            if ret == SERIALFRAME_ACK:
-                # completed
-                if frame.flags != SERIALFRAME_ACK:
-                    raise AssertionError('RxSerialFrame Fail, ErrorCode: %d' % frame.flags)
-                return ctypes.string_at(<uintptr_t>frame.data, frame.datalen)
-            elif ret != SERIALFRAME_PENDING:
-                # something error
-                raise AssertionError('RxSerialFrame Fail, ErrorCode: %d' % ret)
+    if not no_response:
+        SerialFrame_Init(&frame)
+        while True:
+            ch = pyserial_instance.read(1)
+            logging.debug('rx: 0x%02x', ord(ch))
+            if ch is not None and len(ch) == 1:
+                ret = SerialFrame_PutChar(&frame, ord(ch))
+                logging.debug('putchar return: %d', ret)
+                if ret == SERIALFRAME_ACK:
+                    # completed
+                    if frame.flags != SERIALFRAME_ACK:
+                        raise AssertionError('RxSerialFrame Fail, ErrorCode: %d' % frame.flags)
+                    if frame.opcode != opcode:
+                        raise AssertionError('RxSerialFrame Fail, Incorrect opcode: %d' % frame.opcode)
+                    return ctypes.string_at(<uintptr_t>frame.data, frame.datalen)
+                elif ret != SERIALFRAME_PENDING:
+                    # something error
+                    raise AssertionError('RxSerialFrame Fail, ErrorCode: %d' % ret)
 
 
 def get_config(pyserial_instance):

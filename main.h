@@ -14,7 +14,7 @@
 
 #define CONFIG_FOREACH(ITEM)				\
 	ITEM(int8_t, x_direction,		-1)		\
-	ITEM(int8_t, y_direction, 		1)		\
+	ITEM(int8_t, y_direction,		1)		\
 	ITEM(int8_t, scroll_direction,	-1)		\
 	ITEM(int8_t, reserve,			0)		\
 	ITEM(float,  scale_left,		1.0f)	\
@@ -32,6 +32,10 @@ struct Config
 	ITEM(OPCODE_GET_CONFIG,			1)		\
 	ITEM(OPCODE_SET_CONFIG,			2)		\
 	ITEM(OPCODE_ECHO,				3)		\
+	ITEM(OPCODE_REBOOT,				4)		\
+	ITEM(OPCODE_START_TP_DUMP,		5)		\
+	ITEM(OPCODE_STOP_TP_DUMP,		6)		\
+	ITEM(OPCODE_TP_DATA,			7)		\
 	/*-------------------------------------*/ 
 
 enum OPCODE
