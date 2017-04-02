@@ -31,11 +31,8 @@ uint8_t SerialFrame_PutChar(struct SerialFrame *self, uint8_t inChar)
 			self->leadbyte_currstate = STATE_WAIT_FLAG;
 			break;
 		case STATE_WAIT_FLAG:
-			if (inChar != 0) {
-				self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
-			} else {
-				self->leadbyte_currstate = STATE_WAIT_DATALEN;
-			}
+			self->flags = inChar;
+			self->leadbyte_currstate = STATE_WAIT_DATALEN;
 			break;
 		case STATE_WAIT_DATALEN:
 			if (inChar > sizeof(self->data)) {
@@ -43,24 +40,24 @@ uint8_t SerialFrame_PutChar(struct SerialFrame *self, uint8_t inChar)
 				self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
 				return SERIALFRAME_BAD_FRAME;
 			}
-			self->datalen = inChar;
-			self->flags_rxlen = 0;
 			if (inChar == 0) {
 				self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
 				return SERIALFRAME_ACK;
 			} else {
+				self->datalen = inChar;
+				self->__rxlen = 0;
 				self->leadbyte_currstate = STATE_RXDATA;
 			}
 			break;
 		case STATE_RXDATA:
-			rxlen = self->flags_rxlen;
+			rxlen = self->__rxlen;
 			self->data[rxlen++] = inChar;
 			if (rxlen >= self->datalen) {
 				/* rx frame completed */
 				self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
 				return SERIALFRAME_ACK;
 			} else {
-				self->flags_rxlen = rxlen;
+				self->__rxlen = rxlen;
 			}
 			break;
 		default:

@@ -10,6 +10,7 @@
 enum SerialFrameErrCode
 {
 	SERIALFRAME_PENDING				= 0,
+	SERIALFRAME_REQUEST				= 0,
 	SERIALFRAME_ACK					= 1,
 	SERIALFRAME_BAD_FRAME			= 2,
 	SERIALFRAME_BAD_OPCODE			= 3,
@@ -22,10 +23,13 @@ struct SerialFrame
 	/** for tx: leadbyte; for rx: current state */
 	uint8_t leadbyte_currstate;
 	uint8_t opcode;
-	/** for tx: flags; for rx: current received uint8_ts */
-	uint8_t flags_rxlen;
+	uint8_t flags;
 	uint8_t datalen;
 	uint8_t data[SERIALFRAME_MAX_DATALEN];
+	uint8_t __rxlen;
+	uint8_t reserve_1;
+	uint8_t reserve_2;
+	uint8_t reserve_3;
 };
 
 void SerialFrame_Init(struct SerialFrame *self);

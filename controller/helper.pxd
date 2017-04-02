@@ -11,7 +11,7 @@ cdef extern from 'helper.h':
         uint8_t leadbyte_currstate
         uint8_t opcode
         uint8_t datalen
-        uint8_t flags_rxlen
+        uint8_t flags
         uint8_t *data
 
     int    GetConfigItemCount()

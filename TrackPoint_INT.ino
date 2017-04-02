@@ -136,8 +136,9 @@ void loop()
 {	
 	handleTrackpointEvent();
 	if (Serial.available() > 0) {
-		uint8_t errCode = SerialFrame_PutChar(&mSerialFrame, (uint8_t) Serial.read());
-		if (errCode == SERIALFRAME_ACK) {
+		uint8_t inChar = (uint8_t) Serial.read();
+		uint8_t errCode = SerialFrame_PutChar(&mSerialFrame, inChar);
+		if (errCode == SERIALFRAME_ACK && mSerialFrame.flags == SERIALFRAME_REQUEST) {
 			handleSerialRequest();
 		} else if (errCode != SERIALFRAME_PENDING) {
 			sendSerialFrameWithoutData(errCode);
@@ -159,7 +160,7 @@ static void handleSerialRequest(void)
 				memcpy(mSerialFrame.data, &mConfig, sizeof(mConfig));
 				mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
 				mSerialFrame.datalen = sizeof(mConfig);
-				mSerialFrame.flags_rxlen = SERIALFRAME_ACK;
+				mSerialFrame.flags = SERIALFRAME_ACK;
 				Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + sizeof(mConfig));
 			}
 			break;
@@ -173,7 +174,7 @@ static void handleSerialRequest(void)
 			break;
 		case OPCODE_ECHO:
 			mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
-			mSerialFrame.flags_rxlen = SERIALFRAME_ACK;
+			mSerialFrame.flags = SERIALFRAME_ACK;
 			Serial.write((byte *) &mSerialFrame, mSerialFrame.datalen);
 			break;
 		default:
@@ -186,7 +187,7 @@ static void sendSerialFrameWithoutData(byte flags)
 {
 	mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
 	mSerialFrame.datalen = 0;
-	mSerialFrame.flags_rxlen = flags;
+	mSerialFrame.flags = flags;
 	Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN);
 }
 
