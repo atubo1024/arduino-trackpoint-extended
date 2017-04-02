@@ -9,6 +9,7 @@ from threading import Thread
 import wxformbuilder.dialog_main
 import core
 from mainthreadswitcher import run_in_mainthread, init_for_wxapp
+import matplotlib.pyplot as plt
 
 logging.basicConfig(level=logging.INFO)
 
@@ -58,17 +59,9 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_REBOOT'])
 
     def OnBtnDumping(self, event):
-        if self.__state == 'opened':
-            self.__state = 'dumping'
-            self.m_button_dump.SetLabel('Stop')
-            core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_START_TP_DUMP'])
-            core.get_response(self.__pyserial_instance)
-            th = Thread(target=self.__dump_worker)
-            th.start()
-        else:
-            self.__state = 'opened'
-            self.m_button_dump.SetLabel('Dump')
-            core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_STOP_TP_DUMP'])
+        self.m_button_dump.Enable(False)
+        th = Thread(target=self.__dump_worker)
+        th.start()
 
     def __on_state_changed(self):
         self.m_button_open.Enable(self.__state == 'closed')
@@ -110,18 +103,37 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
 
     def __dump_worker(self):
         datalist = []
-        while self.__state == 'dumping':
+
+        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_START_TP_DUMP'])
+        core.get_response(self.__pyserial_instance)
+        while True:
             datastr = core.get_response(self.__pyserial_instance, core.OPCODES['OPCODE_TP_DATA'])
             if datastr is not None:
                 data = struct.unpack('LBbb', datastr)
                 datalist.append(data)
+                # stop if left buffer pressed
+                if data[1] == 0x14:
+                    break
+        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_STOP_TP_DUMP'])
+        core.get_response(self.__pyserial_instance)
+
         self.__dump_completed(datalist)
 
     @run_in_mainthread
     def __dump_completed(self, datalist):
-        print 'dump_completed'
+        self.m_button_dump.Enable(self.__state != 'closed')
+
+        xlist = []
+        ylist = []
+        x = 0
+        y = 0
         for data in datalist:
-            print data
+            x += data[2]
+            y += data[3]
+            xlist.append(x)
+            ylist.append(y)
+        plt.plot(xlist, ylist, 'b-', marker='+')
+        plt.show()
 
 class App(wx.App):
     def OnInit(self):
