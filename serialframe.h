@@ -22,9 +22,9 @@ struct SerialFrame
 	/** for tx: leadbyte; for rx: current state */
 	uint8_t leadbyte_currstate;
 	uint8_t opcode;
-	uint8_t datalen;
 	/** for tx: flags; for rx: current received uint8_ts */
 	uint8_t flags_rxlen;
+	uint8_t datalen;
 	uint8_t data[SERIALFRAME_MAX_DATALEN];
 };
 
