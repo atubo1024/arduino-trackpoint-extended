@@ -1,6 +1,5 @@
 #include <string.h>
 #include "../main.h"
-#include "../serialframe.h"
 #include "helper.h"
 
 static char* CONFIG_ITEM_NAMES[]  = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_NAME_WITH_DEFAULT) };

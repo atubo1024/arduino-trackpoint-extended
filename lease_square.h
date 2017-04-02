@@ -26,7 +26,7 @@ void MLS_Init(
 	uint16_t  winsize, 
 	uint16_t *buffer_time, 
 	int16_t  *buffer_value, 
-	int32_t	  timeout_interval);
+	uint16_t  timeout_interval);
 void MLS_RemoveTimeout(struct MovingLeaseSquare *self, uint16_t now);
 void MLS_Append(struct MovingLeaseSquare *self, uint16_t now, int16_t value);
 
