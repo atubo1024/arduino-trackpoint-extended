@@ -4,6 +4,7 @@ import wx
 import serial.tools.list_ports
 import serial
 import logging
+import struct
 from threading import Thread
 import wxformbuilder.dialog_main
 import core
@@ -54,17 +55,20 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
             logging.getLogger(None).setLevel(logging.INFO)
 
     def OnBtnReboot(self, event):
-        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_REBOOT'], no_response=True)
+        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_REBOOT'])
 
     def OnBtnDumping(self, event):
         if self.__state == 'opened':
             self.__state = 'dumping'
             self.m_button_dump.SetLabel('Stop')
+            core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_START_TP_DUMP'])
+            core.get_response(self.__pyserial_instance)
             th = Thread(target=self.__dump_worker)
             th.start()
         else:
             self.__state = 'opened'
             self.m_button_dump.SetLabel('Dump')
+            core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_STOP_TP_DUMP'])
 
     def __on_state_changed(self):
         self.m_button_open.Enable(self.__state == 'closed')
@@ -106,19 +110,18 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
 
     def __dump_worker(self):
         datalist = []
-        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_START_TP_DUMP'])
         while self.__state == 'dumping':
-            datastr = core.send_request(core.OPCODES['OPCODE_TP_DATA'], no_request=True)
-            data = struct.unpack('LBbb', datastr)
-            datalist.append(data)
-        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_STOP_TP_DUMP'])
+            datastr = core.get_response(self.__pyserial_instance, core.OPCODES['OPCODE_TP_DATA'])
+            if datastr is not None:
+                data = struct.unpack('LBbb', datastr)
+                datalist.append(data)
         self.__dump_completed(datalist)
 
     @run_in_mainthread
     def __dump_completed(self, datalist):
+        print 'dump_completed'
         for data in datalist:
             print data
-
 
 class App(wx.App):
     def OnInit(self):

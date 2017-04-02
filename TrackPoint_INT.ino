@@ -74,7 +74,7 @@ static void handleTrackpointEvent(void)
 		byte state = d.state;
 		if (mDumping) {
 			mSerialFrame.opcode = OPCODE_TP_DATA;
-			mSerialFrame.flags = 0;
+			mSerialFrame.flags = SERIALFRAME_ACK;
 			mSerialFrame.datalen = 7;
 			*((uint32_t *) mSerialFrame.data) = millis;
 			mSerialFrame.data[4] = state;
@@ -194,9 +194,11 @@ static void handleSerialRequest(void)
 			break;
 		case OPCODE_START_TP_DUMP:
 			mDumping = 1;
+			sendSerialFrameWithoutData(SERIALFRAME_ACK);
 			break;
 		case OPCODE_STOP_TP_DUMP:
 			mDumping = 0;
+			sendSerialFrameWithoutData(SERIALFRAME_ACK);
 			break;
 		default:
 			sendSerialFrameWithoutData(SERIALFRAME_BAD_OPCODE);
