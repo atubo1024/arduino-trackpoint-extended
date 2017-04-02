@@ -12,7 +12,7 @@ class MLS_Test(unittest.TestCase):
         cdef uint16_t buffer_time[50]
         cdef int16_t buffer_value[50]
 
-        a = 2.0
+        a = 1.0
         b = 0.0
         
         T = np.arange(100)

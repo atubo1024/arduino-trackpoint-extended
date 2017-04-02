@@ -15,10 +15,10 @@ struct MovingLeaseSquare
 
 	uint16_t mBufferStartIndex;
 	uint16_t mLastUpdateTime;
-	int32_t  mSumT;
-	int32_t  mSumV;
-	int32_t  mSumTT;
-	int32_t  mSumTV;
+	float    mSumT;
+	float    mSumV;
+	float    mSumTT;
+	float    mSumTV;
 };
 
 void MLS_Init(

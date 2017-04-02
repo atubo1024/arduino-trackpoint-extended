@@ -15,10 +15,10 @@ void MLS_Init(
 	self->count = 0;
 	self->mBufferStartIndex = 0;
 	self->current_value = 0;
-	self->mSumT = 0;
-	self->mSumV = 0;
-	self->mSumTT = 0;
-	self->mSumTV = 0;
+	self->mSumT = 0.0f;
+	self->mSumV = 0.0f;
+	self->mSumTT = 0.0f;
+	self->mSumTV = 0.0f;
 	self->mLastUpdateTime = 0;
 }
 
@@ -49,10 +49,10 @@ void MLS_RemoveTimeout(struct MovingLeaseSquare *self, uint16_t now)
 		self->mLastUpdateTime = now;
 		if (self->count == 0) {
 			self->current_value = 0;
-			self->mSumT = 0;
-			self->mSumTT = 0;
-			self->mSumV = 0;
-			self->mSumTV = 0;
+			self->mSumT = 0.0f;
+			self->mSumTT = 0.0f;
+			self->mSumV = 0.0f;
+			self->mSumTV = 0.0f;
 			self->mBufferStartIndex = 0;
 		}
 	}
@@ -60,8 +60,7 @@ void MLS_RemoveTimeout(struct MovingLeaseSquare *self, uint16_t now)
 
 void MLS_Append(struct MovingLeaseSquare *self, uint16_t now, int16_t value)
 {
-	uint32_t sumT, sumTT;
-	int32_t sumV, sumTV;
+	float sumT, sumTT, sumV, sumTV;
 	uint16_t count;
 
 	count = self->count;
@@ -69,8 +68,8 @@ void MLS_Append(struct MovingLeaseSquare *self, uint16_t now, int16_t value)
 		RemoveHead(self);
 		count--;
 	}
-	sumT = self->mSumT + (int32_t) now;
-	sumTT = self->mSumTT + (int32_t) (now * now);
+	sumT = self->mSumT + now;
+	sumTT = self->mSumTT + (now * now);
 	sumV = self->mSumV + value;
 	sumTV = self->mSumTV + ((int32_t) now) * value;
 
@@ -88,9 +87,9 @@ void MLS_Append(struct MovingLeaseSquare *self, uint16_t now, int16_t value)
 
 	if (count > 1) {
 		float a, b;
-		b = ((float)sumTT) * count - sumT * sumT;
-		a = ((float)(sumTT * sumV - sumT * sumTV)) / b;
-		b = (sumTV * ((int32_t) count) - sumT * sumV) / b;
+		a = sumTT * count - sumT * sumT;
+		b = (sumTT * sumV - sumT * sumTV) / a;
+		a = (sumTV * count - sumT * sumV) / a;
 		self->current_value = (int16_t)(a * now + b);
 	} else {
 		self->current_value = value;

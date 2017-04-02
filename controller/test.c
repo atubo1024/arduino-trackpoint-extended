@@ -1063,15 +1063,15 @@ static PyObject *__pyx_pf_4test_8MLS_Test_test_mls(CYTHON_UNUSED PyObject *__pyx
   /* "test.pyx":15
  *         cdef int16_t buffer_value[50]
  * 
- *         a = 2.0             # <<<<<<<<<<<<<<
+ *         a = 1.0             # <<<<<<<<<<<<<<
  *         b = 0.0
  * 
  */
-  __pyx_v_a = 2.0;
+  __pyx_v_a = 1.0;
 
   /* "test.pyx":16
  * 
- *         a = 2.0
+ *         a = 1.0
  *         b = 0.0             # <<<<<<<<<<<<<<
  * 
  *         T = np.arange(100)
