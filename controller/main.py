@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO)
 class MainDialog(wxformbuilder.dialog_main.MainDialog):
     def __init__(self, *args, **kwargs):
         super(MainDialog, self).__init__(*args, **kwargs)
+        self.__state = 'closed'     # ['closed', 'opened']
         self.__serialports = None
         self.__pyserial_instance = None
         self.__refresh_serialports()
@@ -31,6 +32,8 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         config = core.get_config(self.__pyserial_instance)
         for key, val in config.iteritems():
             print '%s: %s' % (key, val)
+        self.__state = 'opened'
+        self.__on_state_changed()
 
     def OnBtnCloseSerialPort(self, event):
         if self.__pyserial_instance is not None:
@@ -45,6 +48,11 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
             logging.getLogger(None).setLevel(logging.DEBUG)
         else:
             logging.getLogger(None).setLevel(logging.INFO)
+
+    def __on_state_changed(self):
+        self.m_button_open.Enable(self.__state == 'closed')
+        self.m_button_close.Enable(self.__state != 'closed')
+        self.m_button_saveconfig.Enable(self.__state != 'closed')
 
     def __get_selected_serial_devname(self):
         index = self.m_choice_serialports.GetSelection()

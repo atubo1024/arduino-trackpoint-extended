@@ -31,11 +31,13 @@ class MainDialog ( wx.Dialog ):
 		self.m_choice_serialports.SetSelection( 0 )
 		bSizer2.Add( self.m_choice_serialports, 1, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
-		self.m_button1 = wx.Button( self, wx.ID_ANY, u"打开", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer2.Add( self.m_button1, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		self.m_button_open = wx.Button( self, wx.ID_ANY, u"打开", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer2.Add( self.m_button_open, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
-		self.m_button2 = wx.Button( self, wx.ID_ANY, u"关闭", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer2.Add( self.m_button2, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		self.m_button_close = wx.Button( self, wx.ID_ANY, u"关闭", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button_close.Enable( False )
+		
+		bSizer2.Add( self.m_button_close, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
 		
 		self.m_button3 = wx.Button( self, wx.ID_ANY, u"刷新", wx.DefaultPosition, wx.DefaultSize, 0 )
 		bSizer2.Add( self.m_button3, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
@@ -54,8 +56,10 @@ class MainDialog ( wx.Dialog ):
 		
 		bSizer3.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
 		
-		self.m_button4 = wx.Button( self, wx.ID_ANY, u"保存配置", wx.DefaultPosition, wx.DefaultSize, 0 )
-		bSizer3.Add( self.m_button4, 0, wx.ALL, 5 )
+		self.m_button_saveconfig = wx.Button( self, wx.ID_ANY, u"保存配置", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button_saveconfig.Enable( False )
+		
+		bSizer3.Add( self.m_button_saveconfig, 0, wx.ALL, 5 )
 		
 		
 		bSizer1.Add( bSizer3, 0, wx.EXPAND, 5 )
@@ -68,11 +72,11 @@ class MainDialog ( wx.Dialog ):
 		
 		# Connect Events
 		self.Bind( wx.EVT_CLOSE, self.OnClose )
-		self.m_button1.Bind( wx.EVT_BUTTON, self.OnBtnOpenSerialPort )
-		self.m_button2.Bind( wx.EVT_BUTTON, self.OnBtnCloseSerialPort )
+		self.m_button_open.Bind( wx.EVT_BUTTON, self.OnBtnOpenSerialPort )
+		self.m_button_close.Bind( wx.EVT_BUTTON, self.OnBtnCloseSerialPort )
 		self.m_button3.Bind( wx.EVT_BUTTON, self.OnBtnRefreshSerialPorts )
 		self.m_checkbox_debug.Bind( wx.EVT_CHECKBOX, self.OnCheckBoxDebug )
-		self.m_button4.Bind( wx.EVT_BUTTON, self.OnBtnSaveConfig )
+		self.m_button_saveconfig.Bind( wx.EVT_BUTTON, self.OnBtnSaveConfig )
 	
 	def __del__( self ):
 		pass

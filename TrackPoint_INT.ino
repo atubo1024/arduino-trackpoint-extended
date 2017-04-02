@@ -157,10 +157,10 @@ static void handleSerialRequest(void)
 				sendSerialFrameWithoutData(SERIALFRAME_INTERNAL_ERROR);
 			} else {
 				memcpy(mSerialFrame.data, &mConfig, sizeof(mConfig));
-				mSerialFrame.leadbyte_currstate = SERIAL_FRAME_LEADBYTE;
+				mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
 				mSerialFrame.datalen = sizeof(mConfig);
 				mSerialFrame.flags_rxlen = SERIALFRAME_ACK;
-				Serial.write((byte *) &mSerialFrame, SERIAL_FRAME_HEADLEN + sizeof(mConfig));
+				Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + sizeof(mConfig));
 			}
 			break;
 		case OPCODE_SET_CONFIG:
@@ -172,7 +172,7 @@ static void handleSerialRequest(void)
 			}
 			break;
 		case OPCODE_ECHO:
-			mSerialFrame.leadbyte_currstate = SERIAL_FRAME_LEADBYTE;
+			mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
 			mSerialFrame.flags_rxlen = SERIALFRAME_ACK;
 			Serial.write((byte *) &mSerialFrame, mSerialFrame.datalen);
 			break;
@@ -184,10 +184,10 @@ static void handleSerialRequest(void)
 
 static void sendSerialFrameWithoutData(byte flags)
 {
-	mSerialFrame.leadbyte_currstate = SERIAL_FRAME_LEADBYTE;
+	mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
 	mSerialFrame.datalen = 0;
 	mSerialFrame.flags_rxlen = flags;
-	Serial.write((byte *) &mSerialFrame, SERIAL_FRAME_HEADLEN);
+	Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN);
 }
 
 static void sendButtonState(byte state)

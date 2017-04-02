@@ -92,7 +92,7 @@ def send_request(pyserial_instance, opcode, datastr):
     SerialFrame_Init(&frame)
     while True:
         ch = pyserial_instance.read(1)
-        logging.debug('rx: 0x%02x', ch)
+        logging.debug('rx: 0x%02x', ord(ch))
         if ch is not None and len(ch) == 1:
             ret = SerialFrame_PutChar(&frame, ord(ch))
             if ret == SERIALFRAME_ACK:
