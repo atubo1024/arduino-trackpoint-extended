@@ -32,16 +32,24 @@ struct Config
 	ITEM(OPCODE_GET_CONFIG,			1)		\
 	ITEM(OPCODE_SET_CONFIG,			2)		\
 	ITEM(OPCODE_ECHO,				3)		\
-	ITEM(OPCODE_REBOOT,				4)		\
-	ITEM(OPCODE_START_TP_DUMP,		5)		\
-	ITEM(OPCODE_STOP_TP_DUMP,		6)		\
-	ITEM(OPCODE_TP_DATA,			7)		\
+	ITEM(OPCODE_START_TP_DUMP,		4)		\
+	ITEM(OPCODE_STOP_TP_DUMP,		5)		\
+	ITEM(OPCODE_TP_DATA,			6)		\
 	/*-------------------------------------*/ 
 
 enum OPCODE
 {
 	OPCODE_FOREACH(DEFINE_KV_ENUM_ITEM)
 };
+
+struct TrackPointDumpData
+{
+	uint32_t timestamp;
+	uint8_t  state;
+	uint8_t  x;
+	uint8_t  y;
+};
+
 
 #endif		/* #ifndef __HAVE_CONFIG_H */
 

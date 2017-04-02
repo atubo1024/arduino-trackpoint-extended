@@ -1,6 +1,7 @@
 #coding=utf-8
 
 import wx
+import wx.propgrid as pg
 import serial.tools.list_ports
 import serial
 import logging
@@ -20,6 +21,7 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         self.__serialports = None
         self.__pyserial_instance = None
         self.__refresh_serialports()
+        self.__config_dict = None
 
     def OnClose(self, event):
         if self.__pyserial_instance is not None:
@@ -33,9 +35,18 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
     def OnBtnOpenSerialPort(self, event):
         devname = self.__get_selected_serial_devname()
         self.__pyserial_instance = serial.Serial(devname, timeout=None, baudrate=115200)
-        config = core.get_config(self.__pyserial_instance)
-        for key, val in config.iteritems():
-            print '%s: %s' % (key, val)
+        self.__config_dict = core.get_config(self.__pyserial_instance)
+        for key in core.CONFIG_ITEMS:
+            val = self.__config_dict[key]
+            if isinstance(val, int):
+                item = pg.IntProperty(key, key, val)
+            elif isinstance(val, float):
+                item = pg.FloatProperty(key, key, val)
+            else:
+                logging.warning('unsupported property type: %s (%s)', type(val), key)
+                item = None
+            if item is not None:
+                self.m_propertygrid_tpconfig.Append(item)
         self.__state = 'opened'
         self.__on_state_changed()
 
@@ -47,7 +58,14 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         self.__on_state_changed()
 
     def OnBtnSaveConfig(self, event):
-        pass
+        self.m_button_saveconfig.Enable(False)
+        for key in core.CONFIG_ITEMS:
+            prop = self.m_propertygrid_tpconfig.GetPropertyByName(key)
+            val = prop.GetValue()
+            assert(type(val) == type(self.__config_dict[key]))
+            self.__config_dict[key] = val
+        core.save_config(self.__pyserial_instance, self.__config_dict)
+        self.m_button_saveconfig.Enable(True)
 
     def OnCheckBoxDebug(self, event):
         if self.m_checkbox_debug.IsChecked():
@@ -56,7 +74,7 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
             logging.getLogger(None).setLevel(logging.INFO)
 
     def OnBtnReboot(self, event):
-        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_REBOOT'])
+        pass
 
     def OnBtnDumping(self, event):
         self.m_button_dump.Enable(False)

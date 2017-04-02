@@ -25,14 +25,12 @@ static void handleSerialRequest(void);
 #define TP_MOUSE_RIGHT				0x08u
 #define TP_MOUSE_MIDDLE				0x02u
 
-static byte mDebugEnabled = 1;
+static byte mDebugEnabled = 0;
 static byte mDumping = 0;
 static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALUE) };
 static struct SerialFrame mSerialFrame;
 
 TrackPoint trackpoint(CLOCK, DATA, RESET, true);
-
-void(* reboot) (void) = 0;
 
 void setup()
 {	
@@ -73,14 +71,16 @@ static void handleTrackpointEvent(void)
 		TrackPoint::DataReport d = trackpoint.getStreamReport();
 		byte state = d.state;
 		if (mDumping) {
+			struct TrackPointDumpData *pData = (struct TrackPointDumpData *) mSerialFrame.data;
+
 			mSerialFrame.opcode = OPCODE_TP_DATA;
 			mSerialFrame.flags = SERIALFRAME_ACK;
-			mSerialFrame.datalen = 7;
-			*((uint32_t *) mSerialFrame.data) = millis;
-			mSerialFrame.data[4] = state;
-			mSerialFrame.data[5] = d.x;
-			mSerialFrame.data[6] = d.y;
-			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + 7);
+			mSerialFrame.datalen = sizeof(struct TrackPointDumpData);
+			pData->timestamp = millis();
+			pData->state = state;
+			pData->x = d.x;
+			pData->y = d.y;
+			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + sizeof(struct TrackPointDumpData));
 		}
 
 		if (mDebugEnabled) {
@@ -130,14 +130,14 @@ static void handleTrackpointEvent(void)
 
 		dx = d.x * mConfig.x_direction;
 		dy = d.y * mConfig.y_direction;
-		if (dx > 0) {
+		if (dx < 0) {
 			dx = (int8_t) (((float) dx) * mConfig.scale_left);
-		} else if (dx < 0) {
+		} else if (dx > 0) {
 			dx = (int8_t) (((float) dx) * mConfig.scale_right);
 		}
-		if (dy > 0) {
+		if (dy < 0) {
 			dy = (int8_t) (((float) dy) * mConfig.scale_up);
-		} else if (dy < 0) {
+		} else if (dy > 0) {
 			dy = (int8_t) (((float) dy) * mConfig.scale_down);
 		}
 		Mouse.move(dx, dy, 0);
@@ -188,9 +188,6 @@ static void handleSerialRequest(void)
 			mSerialFrame.leadbyte = SERIALFRAME_LEADBYTE;
 			mSerialFrame.flags = SERIALFRAME_ACK;
 			Serial.write((byte *) &mSerialFrame, mSerialFrame.datalen);
-			break;
-		case OPCODE_REBOOT:
-			reboot();
 			break;
 		case OPCODE_START_TP_DUMP:
 			mDumping = 1;

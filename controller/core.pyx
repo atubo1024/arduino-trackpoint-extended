@@ -124,11 +124,11 @@ def get_config(pyserial_instance):
         config[CONFIG_ITEMS[i]] = values[i]
     return config
 
-def set_config(pyserial_instance, config):
+def save_config(pyserial_instance, config):
     values = []
     for name in CONFIG_ITEMS:
         values.append(config[name])
-    datastr = struct.pack(CONFIG_FMTSTR, values)
+    datastr = struct.pack(CONFIG_FMTSTR, *values)
     send_request(pyserial_instance, OPCODES['OPCODE_SET_CONFIG'], datastr)
     get_response(pyserial_instance, OPCODES['OPCODE_SET_CONFIG'])
 
