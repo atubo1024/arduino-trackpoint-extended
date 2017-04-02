@@ -12,7 +12,8 @@ enum SERIAL_STATE_DEF
 
 void SerialFrame_Init(struct SerialFrame *self)
 {
-	self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
+	self->__currstate = STATE_WAIT_LEADBYTE;
+	self->leadbyte = SERIALFRAME_LEADBYTE;
 }
 
 /**
@@ -20,33 +21,33 @@ void SerialFrame_Init(struct SerialFrame *self)
 uint8_t SerialFrame_PutChar(struct SerialFrame *self, uint8_t inChar)
 {
 	uint8_t rxlen = 0;
-	switch (self->leadbyte_currstate) {
+	switch (self->__currstate) {
 		case STATE_WAIT_LEADBYTE:
 			if (inChar == SERIALFRAME_LEADBYTE) {
-				self->leadbyte_currstate = STATE_WAIT_OPCODE;
+				self->__currstate = STATE_WAIT_OPCODE;
 			}
 			break;
 		case STATE_WAIT_OPCODE:
 			self->opcode = inChar;
-			self->leadbyte_currstate = STATE_WAIT_FLAG;
+			self->__currstate = STATE_WAIT_FLAG;
 			break;
 		case STATE_WAIT_FLAG:
 			self->flags = inChar;
-			self->leadbyte_currstate = STATE_WAIT_DATALEN;
+			self->__currstate = STATE_WAIT_DATALEN;
 			break;
 		case STATE_WAIT_DATALEN:
 			if (inChar > sizeof(self->data)) {
 				/* illegal access */
-				self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
+				self->__currstate = STATE_WAIT_LEADBYTE;
 				return SERIALFRAME_BAD_FRAME;
 			}
 			if (inChar == 0) {
-				self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
+				self->__currstate = STATE_WAIT_LEADBYTE;
 				return SERIALFRAME_ACK;
 			} else {
 				self->datalen = inChar;
 				self->__rxlen = 0;
-				self->leadbyte_currstate = STATE_RXDATA;
+				self->__currstate = STATE_RXDATA;
 			}
 			break;
 		case STATE_RXDATA:
@@ -54,7 +55,7 @@ uint8_t SerialFrame_PutChar(struct SerialFrame *self, uint8_t inChar)
 			self->data[rxlen++] = inChar;
 			if (rxlen >= self->datalen) {
 				/* rx frame completed */
-				self->leadbyte_currstate = STATE_WAIT_LEADBYTE;
+				self->__currstate = STATE_WAIT_LEADBYTE;
 				return SERIALFRAME_ACK;
 			} else {
 				self->__rxlen = rxlen;

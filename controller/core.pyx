@@ -54,7 +54,7 @@ cdef int _GenerateSerialFrame(SerialFrame *pSerialFrame, uint8_t opcode, uint8_t
     :return: Total len of SerialFrame, or 0 if error
     """
     if datalen > SERIALFRAME_MAX_DATALEN: return 0
-    pSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE
+    pSerialFrame.leadbyte = SERIALFRAME_LEADBYTE
     pSerialFrame.flags = 0
     pSerialFrame.opcode = opcode
     pSerialFrame.datalen = datalen
@@ -96,7 +96,6 @@ def send_request(pyserial_instance, opcode, datastr):
         if ch is not None and len(ch) == 1:
             ret = SerialFrame_PutChar(&frame, ord(ch))
             logging.debug('putchar return: %d', ret)
-            logging.debug('SerialFrame.state: %d', frame.leadbyte_currstate)
             if ret == SERIALFRAME_ACK:
                 # completed
                 if frame.flags != SERIALFRAME_ACK:

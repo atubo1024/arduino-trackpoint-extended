@@ -158,7 +158,7 @@ static void handleSerialRequest(void)
 				sendSerialFrameWithoutData(SERIALFRAME_INTERNAL_ERROR);
 			} else {
 				memcpy(mSerialFrame.data, &mConfig, sizeof(mConfig));
-				mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
+				mSerialFrame.leadbyte = SERIALFRAME_LEADBYTE;
 				mSerialFrame.datalen = sizeof(mConfig);
 				mSerialFrame.flags = SERIALFRAME_ACK;
 				Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + sizeof(mConfig));
@@ -173,7 +173,7 @@ static void handleSerialRequest(void)
 			}
 			break;
 		case OPCODE_ECHO:
-			mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
+			mSerialFrame.leadbyte = SERIALFRAME_LEADBYTE;
 			mSerialFrame.flags = SERIALFRAME_ACK;
 			Serial.write((byte *) &mSerialFrame, mSerialFrame.datalen);
 			break;
@@ -185,7 +185,7 @@ static void handleSerialRequest(void)
 
 static void sendSerialFrameWithoutData(byte flags)
 {
-	mSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE;
+	mSerialFrame.leadbyte = SERIALFRAME_LEADBYTE;
 	mSerialFrame.datalen = 0;
 	mSerialFrame.flags = flags;
 	Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN);

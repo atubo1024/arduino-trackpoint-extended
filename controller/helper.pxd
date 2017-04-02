@@ -8,7 +8,7 @@ cdef extern from 'helper.h':
     cdef int SERIALFRAME_ACK
 
     struct SerialFrame:
-        uint8_t leadbyte_currstate
+        uint8_t leadbyte
         uint8_t opcode
         uint8_t datalen
         uint8_t flags

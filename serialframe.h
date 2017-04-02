@@ -21,15 +21,15 @@ enum SerialFrameErrCode
 struct SerialFrame
 {
 	/** for tx: leadbyte; for rx: current state */
-	uint8_t leadbyte_currstate;
+	uint8_t leadbyte;
 	uint8_t opcode;
 	uint8_t flags;
 	uint8_t datalen;
 	uint8_t data[SERIALFRAME_MAX_DATALEN];
+	uint8_t __currstate;
 	uint8_t __rxlen;
 	uint8_t reserve_1;
 	uint8_t reserve_2;
-	uint8_t reserve_3;
 };
 
 void SerialFrame_Init(struct SerialFrame *self);
