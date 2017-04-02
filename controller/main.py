@@ -123,16 +123,26 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
     def __dump_completed(self, datalist):
         self.m_button_dump.Enable(self.__state != 'closed')
 
+        tlist = []
         xlist = []
         ylist = []
-        x = 0
-        y = 0
+        countlist = []
+        x_sum = 0
+        y_sum = 0
+        count = 0
         for data in datalist:
-            x += data[2]
-            y += data[3]
-            xlist.append(x)
-            ylist.append(y)
-        plt.plot(xlist, ylist, 'b-', marker='+')
+            (time, state, x, y) = data
+            x_sum += x
+            y_sum += y
+            count += 1
+            tlist.append(time)
+            xlist.append(x_sum)
+            ylist.append(y_sum)
+            countlist.append(count)
+        plt.plot(tlist, xlist, 'g-', marker='+', label='x')
+        plt.plot(tlist, ylist, 'b-', marker='x', label='y')
+        plt.plot(tlist, countlist, 'r-', label='count')
+        plt.legend()
         plt.show()
 
 class App(wx.App):
