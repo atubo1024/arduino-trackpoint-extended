@@ -1,5 +1,6 @@
 
 from libc.string cimport memcpy
+from libc.stdint cimport uintptr_t
 from helper cimport *
 import struct
 import ctypes
@@ -7,6 +8,7 @@ import logging
 
 OPCODES = {}
 CONFIG_ITEMS = []
+CONFIG_FMTSTR = None
 
 _CTYPE_TO_STRUCT_FMT = {
     'float'   : 'f',
@@ -18,6 +20,8 @@ _CTYPE_TO_STRUCT_FMT = {
 } 
 
 cdef _init():
+    global CONFIG_FMTSTR, OPCODES, CONFIG_ITEMS
+
     cdef count
     cdef char **names
     cdef int *values
@@ -33,16 +37,16 @@ cdef _init():
     names = GetConfigItemNames()
     for i from 0 <= i < count:
         CONFIG_ITEMS.append(names[i])
-_init()
+    CONFIG_FMTSTR = get_config_fmtstr()
 
-def get_struct_fmtstr_of_config():
+def get_config_fmtstr():
     cdef count = GetConfigItemCount()
-    cdef char **ctypes = GetConfigItemTypes()
+    cdef char **types = GetConfigItemTypes()
     cdef i
 
     fmtchars = []
     for i from 0 <= i < count:
-        typename = ctypes[i]
+        typename = types[i]
         if typename not in _CTYPE_TO_STRUCT_FMT:
             raise AssertionError('unsupported ctype: %s' % typename)
         fmtchars.append(_CTYPE_TO_STRUCT_FMT[typename])
@@ -100,7 +104,7 @@ def send_request(pyserial_instance, opcode, datastr):
                 # completed
                 if frame.flags != SERIALFRAME_ACK:
                     raise AssertionError('RxSerialFrame Fail, ErrorCode: %d' % frame.flags)
-                return ctypes.string_at(frame.data, frame.datalen)
+                return ctypes.string_at(<uintptr_t>frame.data, frame.datalen)
             elif ret != SERIALFRAME_PENDING:
                 # something error
                 raise AssertionError('RxSerialFrame Fail, ErrorCode: %d' % ret)
@@ -108,7 +112,7 @@ def send_request(pyserial_instance, opcode, datastr):
 
 def get_config(pyserial_instance):
     datastr = send_request(pyserial_instance, OPCODES['OPCODE_GET_CONFIG'], None)
-    values = struct.unpack(get_struct_fmtstr_of_config(), datastr)
+    values = struct.unpack(CONFIG_FMTSTR, datastr)
     config = {}
     for i from 0 <= i < len(values):
         config[CONFIG_ITEMS[i]] = values[i]
@@ -118,6 +122,7 @@ def set_config(pyserial_instance, config):
     values = []
     for name in CONFIG_ITEMS:
         values.append(config[name])
-    datastr = struct.pack(get_struct_fmtstr_of_config(), values)
+    datastr = struct.pack(CONFIG_FMTSTR, values)
     send_request(pyserial_instance, OPCODES['OPCODE_SET_CONFIG'], datastr)
 
+_init()
