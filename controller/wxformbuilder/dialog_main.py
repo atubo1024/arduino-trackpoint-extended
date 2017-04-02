@@ -48,6 +48,9 @@ class MainDialog ( wx.Dialog ):
 		
 		bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
 		
+		self.m_checkbox_debug = wx.CheckBox( self, wx.ID_ANY, u"Debug", wx.DefaultPosition, wx.DefaultSize, 0 )
+		bSizer3.Add( self.m_checkbox_debug, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+		
 		
 		bSizer3.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
 		
@@ -68,6 +71,7 @@ class MainDialog ( wx.Dialog ):
 		self.m_button1.Bind( wx.EVT_BUTTON, self.OnBtnOpenSerialPort )
 		self.m_button2.Bind( wx.EVT_BUTTON, self.OnBtnCloseSerialPort )
 		self.m_button3.Bind( wx.EVT_BUTTON, self.OnBtnRefreshSerialPorts )
+		self.m_checkbox_debug.Bind( wx.EVT_CHECKBOX, self.OnCheckBoxDebug )
 		self.m_button4.Bind( wx.EVT_BUTTON, self.OnBtnSaveConfig )
 	
 	def __del__( self ):
@@ -85,6 +89,9 @@ class MainDialog ( wx.Dialog ):
 		event.Skip()
 	
 	def OnBtnRefreshSerialPorts( self, event ):
+		event.Skip()
+	
+	def OnCheckBoxDebug( self, event ):
 		event.Skip()
 	
 	def OnBtnSaveConfig( self, event ):

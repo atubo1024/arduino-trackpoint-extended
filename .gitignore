@@ -13,3 +13,5 @@
 *.a
 /backup.bat
 *.pyc
+/controller/core.c
+/controller/build

@@ -3,34 +3,56 @@
 import wx
 import wxformbuilder.dialog_main
 import serial.tools.list_ports
+import serial
+import core
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 class MainDialog(wxformbuilder.dialog_main.MainDialog):
     def __init__(self, *args, **kwargs):
         super(MainDialog, self).__init__(*args, **kwargs)
         self.__serialports = None
+        self.__pyserial_instance = None
         self.__refresh_serialports()
 
     def OnClose(self, event):
+        if self.__pyserial_instance is not None:
+            self.__pyserial_instance.close()
+            self.__pyserial_instance = None
         self.Destroy()
 
     def OnBtnRefreshSerialPorts(self, event):
         self.__refresh_serialports()
 
     def OnBtnOpenSerialPort(self, event):
-        pass
+        devname = self.__get_selected_serial_devname()
+        self.__pyserial_instance = serial.Serial(devname, timeout=None, baudrate=9600)
+        config = core.get_config(self.__pyserial_instance)
+        for key, val in config.iteritems():
+            print '%s: %s' % (key, val)
 
     def OnBtnCloseSerialPort(self, event):
-        pass
+        if self.__pyserial_instance is not None:
+            self.__pyserial_instance.close()
+            self.__pyserial_instance = None
 
     def OnBtnSaveConfig(self, event):
         pass
 
-    def __refresh_serialports(self):
-        selected_device = None
+    def OnCheckBoxDebug(self, event):
+        if self.m_checkbox_debug.IsChecked():
+            logging.getLogger(None).setLevel(logging.DEBUG)
+        else:
+            logging.getLogger(None).setLevel(logging.INFO)
+
+    def __get_selected_serial_devname(self):
         index = self.m_choice_serialports.GetSelection()
         if index >= 0 and index < len(self.__serialports):
-            selected_device = self.__serialports[index]['device']
+            return self.__serialports[index]['device']
+        return None
 
+    def __refresh_serialports(self):
         ports = []
         for port in list(serial.tools.list_ports.comports()):
             if isinstance(port, (list, tuple)):
@@ -45,6 +67,7 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
                    'description': port.description})
         self.__serialports = ports
 
+        selected_device = self.__get_selected_serial_devname()
         select_index = 0
         self.m_choice_serialports.Clear()
         for index, port in enumerate(ports):

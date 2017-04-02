@@ -1,7 +1,9 @@
 
+from libc.string cimport memcpy
 from helper cimport *
 import struct
 import ctypes
+import logging
 
 OPCODES = {}
 CONFIG_ITEMS = []
@@ -22,8 +24,8 @@ cdef _init():
     cdef i
 
     count = GetOpCodeItemCount()
-    char **names = GetOpCodeItemNames()
-    int *values = GetOpCodeItemValues()
+    names = GetOpCodeItemNames()
+    values = GetOpCodeItemValues()
     for i from 0 <= i < count:
         OPCODES[names[i]] = values[i]
 
@@ -47,20 +49,19 @@ def get_struct_fmtstr_of_config():
 
     return ''.join(fmtchars)
 
-cdef int GenerateSerialFrame(struct SerialFrame *pSerialFrame, uint8_t opcode, uint8_t* data, uint8_t datalen):
+cdef int _GenerateSerialFrame(SerialFrame *pSerialFrame, uint8_t opcode, uint8_t* data, uint8_t datalen):
     """
     :return: Total len of SerialFrame, or 0 if error
     """
-    if (datalen > SERIALFRAME_MAX_DATALEN) return 0;
-    pSerialFrame->leadbyte_currstate = SERIALFRAME_LEADBYTE;
-    pSerialFrame->flags_rxlen = 0;
-    pSerialFrame->opcode = opcode;
-    pSerialFrame->datalen = datalen;
-    if (datalen > 0) {
-    	memcpy(pSerialFrame->data, data, datalen);
-    }
+    if datalen > SERIALFRAME_MAX_DATALEN: return 0
+    pSerialFrame.leadbyte_currstate = SERIALFRAME_LEADBYTE
+    pSerialFrame.flags_rxlen = 0
+    pSerialFrame.opcode = opcode
+    pSerialFrame.datalen = datalen
+    if datalen > 0:
+        memcpy(pSerialFrame.data, data, datalen)
     
-    return SERIALFRAME_HEADLEN + datalen;
+    return SERIALFRAME_HEADLEN + datalen
 
 def send_request(pyserial_instance, opcode, datastr):
     """
@@ -80,18 +81,20 @@ def send_request(pyserial_instance, opcode, datastr):
     else:
         pData = datastr
         datalen = len(datastr)
-    ret = GenerateSerialFrame(&frame, opcode, pData, datalen);
+    ret = _GenerateSerialFrame(&frame, opcode, pData, datalen);
     assert(ret > 0);
-    pBuffer = <uint8_t *> frame
+    pBuffer = <uint8_t *>(&frame)
     for i from 0 <= i < ret:
+        logging.debug('tx: 0x%02x', pBuffer[i])
         pyserial_instance.write(chr(pBuffer[i]))
 
     # get response
     SerialFrame_Init(&frame)
     while True:
         ch = pyserial_instance.read(1)
+        logging.debug('rx: 0x%02x', ch)
         if ch is not None and len(ch) == 1:
-            ret = SerialFrame.SerialFrame_PutChar(&frame, ord(ch))
+            ret = SerialFrame_PutChar(&frame, ord(ch))
             if ret == SERIALFRAME_ACK:
                 # completed
                 if frame.flags_rxlen != SERIALFRAME_ACK:
@@ -103,10 +106,10 @@ def send_request(pyserial_instance, opcode, datastr):
 
 
 def get_config(pyserial_instance):
-    datastr = send_request(OPCODES['OPCODE_GET_CONFIG'], None)
+    datastr = send_request(pyserial_instance, OPCODES['OPCODE_GET_CONFIG'], None)
     values = struct.unpack(get_struct_fmtstr_of_config(), datastr)
     config = {}
-    for i from 0 <= len(values):
+    for i from 0 <= i < len(values):
         config[CONFIG_ITEMS[i]] = values[i]
     return config
 
@@ -115,5 +118,5 @@ def set_config(pyserial_instance, config):
     for name in CONFIG_ITEMS:
         values.append(config[name])
     datastr = struct.pack(get_struct_fmtstr_of_config(), values)
-    send_request(OPCODES['OPCODE_SET_CONFIG'], datastr)
+    send_request(pyserial_instance, OPCODES['OPCODE_SET_CONFIG'], datastr)
 
