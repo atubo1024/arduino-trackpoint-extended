@@ -118,15 +118,21 @@ static void handleTrackpointEvent(void)
 			} 
 		}
 
+		int8_t dx, dy;
+
 		if ((state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
 			if (mDebugEnabled) {
 				Serial.println("scroll");
 			}
-			Mouse.move(0, 0, d.y * mConfig.scroll_direction);
+			dy = d.y * mConfig.scroll_direction;
+			if (dy < 0) {
+				if (dy < -mConfig.scroll_maxspeed) dy = -mConfig.scroll_maxspeed;
+			} else if (dy > 0) {
+				if (dy > mConfig.scroll_maxspeed) dy = mConfig.scroll_maxspeed;
+			}
+			Mouse.move(0, 0, dy);
 			return;
 		}
-
-		int8_t dx, dy;
 
 		dx = d.x * mConfig.x_direction;
 		dy = d.y * mConfig.y_direction;
