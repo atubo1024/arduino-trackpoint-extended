@@ -15,7 +15,6 @@
 #include "main.h"
 
 static void handleSerialRequest(void);
-static void sendButtonState(byte state);
 
 #define DATA						2
 #define	CLOCK						3
@@ -189,19 +188,5 @@ static void sendSerialFrameWithoutData(byte flags)
 	mSerialFrame.datalen = 0;
 	mSerialFrame.flags = flags;
 	Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN);
-}
-
-static void sendButtonState(byte state)
-{
-	static const byte hidStates[] = {MOUSE_LEFT, MOUSE_RIGHT};
-
-  	for (byte i = 0; i < sizeof(hidStates); i++) {
-		byte hidState = hidStates[i];
-  	  	if (state & (1 << i)) {
-			Mouse.press(hidState);
-  	  	} else if (Mouse.isPressed(hidState)) {
-			Mouse.release(hidState);
-  	  	}
-  	}
 }
 
