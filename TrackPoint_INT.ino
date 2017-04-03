@@ -15,6 +15,8 @@
 #include "serialframe.c"
 #include "main.h"
 
+#define DEBUG						0
+
 static void handleSerialRequest(void);
 
 #define DATA						2
@@ -27,6 +29,8 @@ static void handleSerialRequest(void);
 #define TP_MOUSE_MIDDLE				0x02u
 
 static byte mDumping = 0;
+static byte mIsLeftPressed = 0;
+static byte mIsRightPressed = 0;
 static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALUE) };
 static struct SerialFrame mSerialFrame;
 
@@ -103,12 +107,11 @@ void setup()
 static void handleTrackpointEvent(void)
 {
 	if (trackpoint.reportAvailable()) {
-		#ifdef DEBUG
+		#if DEBUG
 		char buffer[128];
 		#endif
 
 		TrackPoint::DataReport d = trackpoint.getStreamReport();
-		byte state = d.state;
 		if (mDumping) {
 			struct TrackPointDumpData *pData = (struct TrackPointDumpData *) mSerialFrame.data;
 
@@ -121,45 +124,15 @@ static void handleTrackpointEvent(void)
 			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + 6);
 		}
 
-		#ifdef DEBUG
+		#if DEBUG
 			sprintf(buffer, "state: 0x%02x, (%d, %d)\r\n", d.state, d.x, d.y);
 			Serial.print(buffer);
 		#endif
 
-		if (d.x == 0 && d.y == 0) {
-			if ((state & TP_MOUSE_LEFT) == TP_MOUSE_LEFT) {
-				#ifdef DEBUG
-					Serial.println("press left");
-				#endif
-				Mouse.press(MOUSE_LEFT);
-				return;
-			} else if (Mouse.isPressed(MOUSE_LEFT)) {
-				#ifdef DEBUG
-					Serial.println("release left");
-				#endif
-				Mouse.release(MOUSE_LEFT);
-				return;
-			}
-
-			if ((state & TP_MOUSE_RIGHT) == TP_MOUSE_RIGHT) {
-				#ifdef DEBUG
-					Serial.println("press right");
-				#endif
-				Mouse.press(MOUSE_RIGHT);
-				return;
-			} else if (Mouse.isPressed(MOUSE_RIGHT)) {
-				#ifdef DEBUG
-					Serial.println("release right");
-				#endif
-				Mouse.release(MOUSE_RIGHT);
-				return;
-			} 
-		}
-
 		int8_t dx, dy;
 
-		if ((state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
-			#ifdef DEBUG
+		if ((d.state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
+			#if DEBUG
 				Serial.println("scroll");
 			#endif
 			dy = d.y * mConfig.scroll_direction;
@@ -180,6 +153,41 @@ static void handleTrackpointEvent(void)
 			dy = (int8_t) (((float) dy) * mConfig.scale_up);
 		} else if (dy > 0) {
 			dy = (int8_t) (((float) dy) * mConfig.scale_down);
+		}
+
+		if (mIsLeftPressed) {
+			if ((d.state & TP_MOUSE_LEFT) == 0) {
+				#if DEBUG
+				Serial.println("left: release");
+				#endif
+				Mouse.release(MOUSE_LEFT);
+				mIsLeftPressed = 0;
+			}
+		} else {
+			if (d.state & TP_MOUSE_LEFT) {
+				#if DEBUG
+				Serial.println("left: press");
+				#endif
+				Mouse.press(MOUSE_LEFT);
+				mIsLeftPressed = 1;
+			}
+		}
+		if (mIsRightPressed) {
+			if ((d.state & TP_MOUSE_RIGHT) == 0) {
+				#if DEBUG
+				Serial.println("right: release");
+				#endif
+				Mouse.release(MOUSE_RIGHT);
+				mIsRightPressed = 0;
+			}
+		} else {
+			if (d.state & TP_MOUSE_RIGHT) {
+				#if DEBUG
+				Serial.println("right: press");
+				#endif
+				Mouse.press(MOUSE_RIGHT);
+				mIsRightPressed = 1;
+			}
 		}
 		Mouse.move(dx, dy, 0);
 	} 
