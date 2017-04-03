@@ -161,10 +161,6 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         plt.plot(tlist, ylist, 'b-', marker='x', label='y')
         plt.plot(tlist, countlist, 'r-', label='count')
 
-        est_xlist, est_ylist = core.test_mls(tlist, xlist, ylist, winsize=20)
-        plt.plot(tlist, est_xlist, 'g+', label='est_x')
-        plt.plot(tlist, est_ylist, 'b+', label='est_y')
-
         plt.legend()
         plt.show()
 
