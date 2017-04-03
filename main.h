@@ -16,14 +16,11 @@
 	ITEM(int8_t, x_direction,		-1)		\
 	ITEM(int8_t, y_direction,		1)		\
 	ITEM(int8_t, scroll_direction,	-1)		\
-	ITEM(int8_t, scroll_maxspeed,	5)		\
-	ITEM(int8_t, mls_enabled,		0)		\
-	ITEM(int8_t, reserve_1,			0)		\
-	ITEM(int16_t, reserve_2,		0)		\
-	ITEM(float,  scale_left,		1.0f)	\
-	ITEM(float,  scale_right,		1.0f)	\
-	ITEM(float,  scale_up,			1.0f)	\
-	ITEM(float,  scale_down,		1.0f)	\
+	ITEM(int8_t, scroll_maxspeed,	10)		\
+	ITEM(float,  scale_left,		0.8f)	\
+	ITEM(float,  scale_right,		0.8f)	\
+	ITEM(float,  scale_up,			0.8f)	\
+	ITEM(float,  scale_down,		0.8f)	\
 	/*-------------------------------------*/
 
 struct Config
@@ -47,9 +44,10 @@ enum OPCODE
 
 struct TrackPointDumpData
 {
-	uint16_t timestamp;
+	uint32_t timestamp;
 	uint8_t  x;
 	uint8_t  y;
+	uint16_t reserve;
 };
 
 

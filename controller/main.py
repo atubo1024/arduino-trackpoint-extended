@@ -127,7 +127,7 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         while True:
             datastr = core.get_response(self.__pyserial_instance, core.OPCODES['OPCODE_TP_DATA'])
             if datastr is not None:
-                data = struct.unpack('Hbb', datastr)
+                data = struct.unpack('Lbb', datastr)
                 datalist.append(data)
                 # stop if left buffer pressed
                 if data[1] == 0 and data[2] == 0:
