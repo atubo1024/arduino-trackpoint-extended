@@ -9,6 +9,7 @@
  */
 #include <string.h>
 #include <Mouse.h>
+#include <EEPROM.h>
 #include "TrackPoint.h"
 /* I dont know how add source files to ArduinoIDE project, so include the source file instead of the header file. */
 #include "serialframe.c"
@@ -25,15 +26,50 @@ static void handleSerialRequest(void);
 #define TP_MOUSE_RIGHT				0x08u
 #define TP_MOUSE_MIDDLE				0x02u
 
-static byte mDebugEnabled = 0;
 static byte mDumping = 0;
 static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALUE) };
 static struct SerialFrame mSerialFrame;
 
 TrackPoint trackpoint(CLOCK, DATA, RESET, true);
 
+#define EEPROM_LEADER				0xe5u
+
+static void loadConfig(void)
+{
+	byte *p;
+	int i, addr;
+
+	addr = 0;
+	if (EEPROM.read(addr++) != EEPROM_LEADER) return;
+	if (EEPROM.read(addr++) != CONFIG_VERSION) return;
+
+	p = (byte *) &mConfig;
+	for (i = 0; i<sizeof(mConfig); i++) {
+		*p++ = EEPROM.read(addr++);
+	}
+}
+
+static void saveConfig(void)
+{
+	byte *p;
+	int i, addr;
+
+	addr = 0;
+	EEPROM.update(addr++, EEPROM_LEADER);
+	delay(100);
+	EEPROM.update(addr++, CONFIG_VERSION);
+	delay(100);
+
+	p = (byte *) &mConfig;
+	for (i=0; i<sizeof(mConfig); i++) {
+		EEPROM.update(addr++, *p++);
+	}
+}
+
 void setup()
 {	
+	loadConfig();
+
 	SerialFrame_Init(&mSerialFrame);
 
 	Serial.begin(115200);
@@ -67,7 +103,10 @@ void setup()
 static void handleTrackpointEvent(void)
 {
 	if (trackpoint.reportAvailable()) {
+		#ifdef DEBUG
 		char buffer[128];
+		#endif
+
 		TrackPoint::DataReport d = trackpoint.getStreamReport();
 		byte state = d.state;
 		if (mDumping) {
@@ -82,36 +121,36 @@ static void handleTrackpointEvent(void)
 			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + 6);
 		}
 
-		if (mDebugEnabled) {
+		#ifdef DEBUG
 			sprintf(buffer, "state: 0x%02x, (%d, %d)\r\n", d.state, d.x, d.y);
 			Serial.print(buffer);
-		}
+		#endif
 
 		if (d.x == 0 && d.y == 0) {
 			if ((state & TP_MOUSE_LEFT) == TP_MOUSE_LEFT) {
-				if (mDebugEnabled) {
+				#ifdef DEBUG
 					Serial.println("press left");
-				}
+				#endif
 				Mouse.press(MOUSE_LEFT);
 				return;
 			} else if (Mouse.isPressed(MOUSE_LEFT)) {
-				if (mDebugEnabled) {
+				#ifdef DEBUG
 					Serial.println("release left");
-				}
+				#endif
 				Mouse.release(MOUSE_LEFT);
 				return;
 			}
 
 			if ((state & TP_MOUSE_RIGHT) == TP_MOUSE_RIGHT) {
-				if (mDebugEnabled) {
+				#ifdef DEBUG
 					Serial.println("press right");
-				}
+				#endif
 				Mouse.press(MOUSE_RIGHT);
 				return;
 			} else if (Mouse.isPressed(MOUSE_RIGHT)) {
-				if (mDebugEnabled) {
+				#ifdef DEBUG
 					Serial.println("release right");
-				}
+				#endif
 				Mouse.release(MOUSE_RIGHT);
 				return;
 			} 
@@ -120,15 +159,11 @@ static void handleTrackpointEvent(void)
 		int8_t dx, dy;
 
 		if ((state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
-			if (mDebugEnabled) {
+			#ifdef DEBUG
 				Serial.println("scroll");
-			}
+			#endif
 			dy = d.y * mConfig.scroll_direction;
-			if (dy < 0) {
-				if (dy < -mConfig.scroll_maxspeed) dy = -mConfig.scroll_maxspeed;
-			} else if (dy > 0) {
-				if (dy > mConfig.scroll_maxspeed) dy = mConfig.scroll_maxspeed;
-			}
+			dy = (int8_t)(mConfig.scale_scroll * dy);
 			Mouse.move(0, 0, dy);
 			return;
 		}
@@ -187,6 +222,7 @@ static void handleSerialRequest(void)
 				sendSerialFrameWithoutData(SERIALFRAME_BAD_PARAMS);
 			} else {
 				memcpy(&mConfig, mSerialFrame.data, mSerialFrame.datalen);
+				saveConfig();
 				sendSerialFrameWithoutData(SERIALFRAME_ACK);
 			}
 			break;

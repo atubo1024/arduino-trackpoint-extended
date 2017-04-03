@@ -12,11 +12,14 @@
 #define COLLECT_KV_ENUM_ITEM_NAME(key, value) #key,
 #define COLLECT_KV_ENUM_ITEM_VALUE(key, value) value,
 
+#define CONFIG_VERSION				1u
+
 #define CONFIG_FOREACH(ITEM)				\
 	ITEM(int8_t, x_direction,		-1)		\
 	ITEM(int8_t, y_direction,		1)		\
 	ITEM(int8_t, scroll_direction,	-1)		\
-	ITEM(int8_t, scroll_maxspeed,	10)		\
+	ITEM(int8_t, reserve,			0)		\
+	ITEM(float,  scale_scroll,		0.5f)	\
 	ITEM(float,  scale_left,		0.8f)	\
 	ITEM(float,  scale_right,		0.8f)	\
 	ITEM(float,  scale_up,			0.8f)	\
