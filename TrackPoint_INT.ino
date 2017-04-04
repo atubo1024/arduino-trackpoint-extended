@@ -139,7 +139,14 @@ static void handleTrackpointEvent(void)
 				Serial.println("scroll");
 			#endif
 			dy = d.y * mConfig.scroll_direction;
-			dy = (int8_t)(mConfig.scale_scroll * dy);
+			if (dy == 0) return;
+			dx = (int8_t)(mConfig.scale_scroll * dy);
+			if (dx == 0) {
+				if (dy > 0) dy = 1;
+				else dy = -1;
+			} else {
+				dy = dx;
+			}
 			Mouse.move(0, 0, dy);
 			return;
 		}
