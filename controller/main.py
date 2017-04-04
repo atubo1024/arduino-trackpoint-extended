@@ -50,6 +50,10 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         self.__state = 'opened'
         self.__on_state_changed()
 
+        # get cpu utilization
+        self.OnBtnUpdateStatistics(None)
+
+
     def OnBtnCloseSerialPort(self, event):
         if self.__pyserial_instance is not None:
             self.__pyserial_instance.close()
@@ -76,6 +80,12 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
     def OnBtnReboot(self, event):
         pass
 
+    def OnBtnUpdateStatistics(self, event):
+        core.send_request(self.__pyserial_instance, core.OPCODES['OPCODE_GET_CPU_UTILIZATION'])
+        datastr = core.get_response(self.__pyserial_instance, core.OPCODES['OPCODE_GET_CPU_UTILIZATION'])
+        total_millis, tp_cost_millis = struct.unpack('LL', datastr)
+        self.m_st_statistics.SetLabel('cpu: %d%%, total: %d, tp cost: %d' % (float(tp_cost_millis) / total_millis * 100, total_millis, tp_cost_millis))
+
     def OnBtnDumping(self, event):
         self.m_button_dump.Enable(False)
         th = Thread(target=self.__dump_worker)
@@ -87,6 +97,7 @@ class MainDialog(wxformbuilder.dialog_main.MainDialog):
         self.m_button_saveconfig.Enable(self.__state != 'closed')
         self.m_button_reboot.Enable(self.__state != 'closed')
         self.m_button_dump.Enable(self.__state != 'closed')
+        self.m_button_update_statistics.Enable(self.__state != 'closed')
 
     def __get_selected_serial_devname(self):
         index = self.m_choice_serialports.GetSelection()

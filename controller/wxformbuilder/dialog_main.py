@@ -48,6 +48,10 @@ class MainDialog ( wx.Dialog ):
 		self.m_propertygrid_tpconfig = pg.PropertyGrid(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.propgrid.PG_DEFAULT_STYLE)
 		bSizer1.Add( self.m_propertygrid_tpconfig, 1, wx.ALL|wx.EXPAND, 5 )
 		
+		self.m_st_statistics = wx.StaticText( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_st_statistics.Wrap( -1 )
+		bSizer1.Add( self.m_st_statistics, 0, wx.ALL|wx.EXPAND, 5 )
+		
 		bSizer3 = wx.BoxSizer( wx.HORIZONTAL )
 		
 		self.m_checkbox_debug = wx.CheckBox( self, wx.ID_ANY, u"Debug", wx.DefaultPosition, wx.DefaultSize, 0 )
@@ -55,6 +59,11 @@ class MainDialog ( wx.Dialog ):
 		
 		
 		bSizer3.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+		
+		self.m_button_update_statistics = wx.Button( self, wx.ID_ANY, u"更新统计", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.m_button_update_statistics.Enable( False )
+		
+		bSizer3.Add( self.m_button_update_statistics, 0, wx.ALL, 5 )
 		
 		self.m_button_reboot = wx.Button( self, wx.ID_ANY, u"重启", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_button_reboot.Enable( False )
@@ -86,6 +95,7 @@ class MainDialog ( wx.Dialog ):
 		self.m_button_close.Bind( wx.EVT_BUTTON, self.OnBtnCloseSerialPort )
 		self.m_button3.Bind( wx.EVT_BUTTON, self.OnBtnRefreshSerialPorts )
 		self.m_checkbox_debug.Bind( wx.EVT_CHECKBOX, self.OnCheckBoxDebug )
+		self.m_button_update_statistics.Bind( wx.EVT_BUTTON, self.OnBtnUpdateStatistics )
 		self.m_button_reboot.Bind( wx.EVT_BUTTON, self.OnBtnReboot )
 		self.m_button_dump.Bind( wx.EVT_BUTTON, self.OnBtnDumping )
 		self.m_button_saveconfig.Bind( wx.EVT_BUTTON, self.OnBtnSaveConfig )
@@ -108,6 +118,9 @@ class MainDialog ( wx.Dialog ):
 		event.Skip()
 	
 	def OnCheckBoxDebug( self, event ):
+		event.Skip()
+	
+	def OnBtnUpdateStatistics( self, event ):
 		event.Skip()
 	
 	def OnBtnReboot( self, event ):

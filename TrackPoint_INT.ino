@@ -33,6 +33,8 @@ static byte mIsLeftPressed = 0;
 static byte mIsRightPressed = 0;
 static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALUE) };
 static struct SerialFrame mSerialFrame;
+static uint32_t mStartMillis = 0;
+static uint32_t mTpCostMillis;
 
 TrackPoint trackpoint(CLOCK, DATA, RESET, true);
 
@@ -102,6 +104,7 @@ void setup()
 	digitalWrite(LED_BUILTIN, LOW);
 
 	Serial.println("TrackPoint Started.");
+
 }
 
 static void handleTrackpointEvent(void)
@@ -195,7 +198,15 @@ static void handleTrackpointEvent(void)
 
 void loop()
 {	
+	uint32_t now = millis();
+
+	if (now - mStartMillis > 10000) {
+		mStartMillis = now;
+		mTpCostMillis = 0;
+	}
 	handleTrackpointEvent();
+	mTpCostMillis += (millis() - now);
+
 	if (Serial.available() > 0) {
 		uint8_t inChar = (uint8_t) Serial.read();
 		uint8_t errCode = SerialFrame_PutChar(&mSerialFrame, inChar);
@@ -237,7 +248,7 @@ static void handleSerialRequest(void)
 		case OPCODE_ECHO:
 			mSerialFrame.leadbyte = SERIALFRAME_LEADBYTE;
 			mSerialFrame.flags = SERIALFRAME_ACK;
-			Serial.write((byte *) &mSerialFrame, mSerialFrame.datalen);
+			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + mSerialFrame.datalen);
 			break;
 		case OPCODE_START_TP_DUMP:
 			mDumping = 1;
@@ -246,6 +257,13 @@ static void handleSerialRequest(void)
 		case OPCODE_STOP_TP_DUMP:
 			mDumping = 0;
 			sendSerialFrameWithoutData(SERIALFRAME_ACK);
+			break;
+		case OPCODE_GET_CPU_UTILIZATION:
+			mSerialFrame.flags = SERIALFRAME_ACK;
+			mSerialFrame.datalen = 8;
+			*((uint32_t *) &mSerialFrame.data[0]) = millis() - mStartMillis;
+			*((uint32_t *) &mSerialFrame.data[4]) = mTpCostMillis;
+			Serial.write((byte *) &mSerialFrame, SERIALFRAME_HEADLEN + 8);
 			break;
 		default:
 			sendSerialFrameWithoutData(SERIALFRAME_BAD_OPCODE);

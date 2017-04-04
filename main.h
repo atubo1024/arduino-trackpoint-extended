@@ -31,14 +31,15 @@ struct Config
 	CONFIG_FOREACH(DEFINE_STRUCT_ITEM_WITH_DEFAULT)
 };
 
-#define OPCODE_FOREACH(ITEM)				\
-	ITEM(OPCODE_GET_CONFIG,			1)		\
-	ITEM(OPCODE_SET_CONFIG,			2)		\
-	ITEM(OPCODE_ECHO,				3)		\
-	ITEM(OPCODE_START_TP_DUMP,		4)		\
-	ITEM(OPCODE_STOP_TP_DUMP,		5)		\
-	ITEM(OPCODE_TP_DATA,			6)		\
-	/*-------------------------------------*/ 
+#define OPCODE_FOREACH(ITEM)					\
+	ITEM(OPCODE_GET_CONFIG,				1)		\
+	ITEM(OPCODE_SET_CONFIG,				2)		\
+	ITEM(OPCODE_ECHO,					3)		\
+	ITEM(OPCODE_START_TP_DUMP,			4)		\
+	ITEM(OPCODE_STOP_TP_DUMP,			5)		\
+	ITEM(OPCODE_TP_DATA,				6)		\
+	ITEM(OPCODE_GET_CPU_UTILIZATION,	7)		\
+	/*-----------------------------------------*/ 
 
 enum OPCODE
 {
