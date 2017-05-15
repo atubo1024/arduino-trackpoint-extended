@@ -9,6 +9,7 @@
  */
 #include <string.h>
 #include <Mouse.h>
+#include <Keyboard.h>
 #include <EEPROM.h>
 #include "TrackPoint.h"
 /* I dont know how add source files to ArduinoIDE project, so include the source file instead of the header file. */
@@ -24,6 +25,8 @@ static void handleSerialRequest(void);
 #define RESET						4
 #define CLOCK_INT					0
 
+#define PIN_BTN4                    10
+
 #define TP_MOUSE_LEFT				0x04u
 #define TP_MOUSE_RIGHT				0x08u
 #define TP_MOUSE_MIDDLE				0x02u
@@ -35,6 +38,8 @@ static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALU
 static struct SerialFrame mSerialFrame;
 static uint32_t mStartMillis = 0;
 static uint32_t mTpCostMillis;
+
+static uint8_t mIsBtn4Up = 1;
 
 TrackPoint trackpoint(CLOCK, DATA, RESET, true);
 
@@ -78,9 +83,12 @@ void setup()
 
 	SerialFrame_Init(&mSerialFrame);
 
+    pinMode(PIN_BTN4, INPUT_PULLUP);
+
 	Serial.begin(115200);
 
 	Mouse.begin();
+    Keyboard.begin();
 	pinMode(LED_BUILTIN, OUTPUT);
 
 	digitalWrite(LED_BUILTIN, HIGH);
@@ -203,9 +211,30 @@ static void handleTrackpointEvent(void)
 	} 
 }
 
+static void handleBtn4()
+{
+    uint8_t pinValue;
+
+    pinValue = digitalRead(PIN_BTN4);
+
+    if (pinValue != mIsBtn4Up) {
+        mIsBtn4Up = pinValue;
+        if (pinValue == LOW) {
+            /* Serial.println("down"); */
+            Keyboard.press(KEY_LEFT_ALT);
+            Keyboard.press(KEY_F4);
+        } else {
+            /* Serial.println("up"); */
+            Keyboard.releaseAll();
+        }
+    }
+}
+
 void loop()
 {	
 	uint32_t now = millis();
+
+    handleBtn4();
 
 	if (now - mStartMillis > 10000) {
 		mStartMillis = now;
