@@ -34,6 +34,7 @@ static void handleSerialRequest(void);
 static byte mDumping = 0;
 static byte mIsLeftPressed = 0;
 static byte mIsRightPressed = 0;
+static uint8_t mIsMiddlePressed = 0;
 static struct Config mConfig = { CONFIG_FOREACH(COLLECT_STRUCT_ITEM_DEFAULT_VALUE) };
 static struct SerialFrame mSerialFrame;
 static uint32_t mStartMillis = 0;
@@ -144,20 +145,29 @@ static void handleTrackpointEvent(void)
 
 		if ((d.state & TP_MOUSE_MIDDLE) == TP_MOUSE_MIDDLE) {
 			#if DEBUG
-				Serial.println("scroll");
+			Serial.println("scroll");
 			#endif
 			dy = d.y * mConfig.scroll_direction;
-			if (dy == 0) return;
-			dx = (int8_t)(mConfig.scale_scroll * dy);
-			if (dx == 0) {
-				if (dy > 0) dy = 1;
-				else dy = -1;
-			} else {
-				dy = dx;
-			}
-			Mouse.move(0, 0, dy);
+			if (dy == 0) {
+                mIsMiddlePressed = 1;
+            } else {
+                mIsMiddlePressed = 0;       /* cancel press */
+			    dx = (int8_t)(mConfig.scale_scroll * dy);
+			    if (dx == 0) {
+			    	if (dy > 0) dy = 1;
+			    	else dy = -1;
+			    } else {
+			    	dy = dx;
+			    }
+			    Mouse.move(0, 0, dy);
+            }
 			return;
-		}
+		} else if (mIsMiddlePressed) {    /* middle key up */
+            mIsMiddlePressed = 0;
+            /* press middle key */
+			Mouse.press(MOUSE_MIDDLE);
+			Mouse.release(MOUSE_MIDDLE);
+        }
 
 		dx = d.x * mConfig.x_direction;
 		dy = d.y * mConfig.y_direction;
