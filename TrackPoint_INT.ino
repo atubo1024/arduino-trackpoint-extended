@@ -149,9 +149,9 @@ static void handleTrackpointEvent(void)
 			#endif
 			dy = d.y * mConfig.scroll_direction;
 			if (dy == 0) {
-                mIsMiddlePressed = 1;
+                if (mIsMiddlePressed == 0) mIsMiddlePressed = 1;
             } else {
-                mIsMiddlePressed = 0;       /* cancel press */
+                mIsMiddlePressed = 2;       /* cancel press and start scrolling */
 			    dx = (int8_t)(mConfig.scale_scroll * dy);
 			    if (dx == 0) {
 			    	if (dy > 0) dy = 1;
@@ -163,10 +163,12 @@ static void handleTrackpointEvent(void)
             }
 			return;
 		} else if (mIsMiddlePressed) {    /* middle key up */
+            if (mIsMiddlePressed == 1) {    /* middle key is pressed and scrolling is not started */
+                /* press middle key */
+			    Mouse.press(MOUSE_MIDDLE);
+			    Mouse.release(MOUSE_MIDDLE);
+            }
             mIsMiddlePressed = 0;
-            /* press middle key */
-			Mouse.press(MOUSE_MIDDLE);
-			Mouse.release(MOUSE_MIDDLE);
         }
 
 		dx = d.x * mConfig.x_direction;
