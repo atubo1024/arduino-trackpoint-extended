@@ -233,11 +233,18 @@ static void handleBtn4()
         mIsBtn4Up = pinValue;
         if (pinValue == LOW) {
             /* Serial.println("down"); */
+            /* Keyboard.press(KEY_LEFT_ALT); */
+            /* Keyboard.press(KEY_F4); */
             Keyboard.press(KEY_LEFT_ALT);
-            Keyboard.press(KEY_F4);
+            Keyboard.press(' ');
+            Keyboard.press('n');
         } else {
             /* Serial.println("up"); */
-            Keyboard.releaseAll();
+            /* Keyboard.release(KEY_F4); */
+            /* Keyboard.release(KEY_LEFT_ALT); */
+            Keyboard.release('n');
+            Keyboard.release(' ');
+            Keyboard.release(KEY_LEFT_ALT);
         }
     }
 }
