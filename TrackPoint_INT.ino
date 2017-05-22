@@ -233,18 +233,13 @@ static void handleBtn4()
         mIsBtn4Up = pinValue;
         if (pinValue == LOW) {
             /* Serial.println("down"); */
-            /* Keyboard.press(KEY_LEFT_ALT); */
-            /* Keyboard.press(KEY_F4); */
-            Keyboard.press(KEY_LEFT_ALT);
-            Keyboard.press(' ');
-            Keyboard.press('n');
+            /* 映射成ctrl+tab: 切换同应用中的不同窗口 */
+            Keyboard.press(KEY_LEFT_GUI);   /* LWIN被映射成了LCTRL */
+            Keyboard.press(KEY_TAB);
         } else {
             /* Serial.println("up"); */
-            /* Keyboard.release(KEY_F4); */
-            /* Keyboard.release(KEY_LEFT_ALT); */
-            Keyboard.release('n');
-            Keyboard.release(' ');
-            Keyboard.release(KEY_LEFT_ALT);
+            Keyboard.release(KEY_TAB);
+            Keyboard.release(KEY_LEFT_GUI);
         }
     }
 }
