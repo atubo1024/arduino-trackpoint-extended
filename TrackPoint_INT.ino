@@ -234,12 +234,14 @@ static void handleBtn4()
         if (pinValue == LOW) {
             /* Serial.println("down"); */
             /* 映射成ctrl+tab: 切换同应用中的不同窗口 */
-            Keyboard.press(KEY_LEFT_GUI);   /* LWIN被映射成了LCTRL */
+            /* Keyboard.press(KEY_LEFT_GUI);   [> LWIN被映射成了LCTRL <] */
+            Keyboard.press(KEY_LEFT_ALT);
             Keyboard.press(KEY_TAB);
         } else {
             /* Serial.println("up"); */
             Keyboard.release(KEY_TAB);
-            Keyboard.release(KEY_LEFT_GUI);
+            /* Keyboard.release(KEY_LEFT_GUI); */
+            Keyboard.release(KEY_LEFT_ALT);
         }
     }
 }
