@@ -235,13 +235,19 @@ static void handleBtn4()
             /* Serial.println("down"); */
             /* 映射成ctrl+tab: 切换同应用中的不同窗口 */
             /* Keyboard.press(KEY_LEFT_GUI);   [> LWIN被映射成了LCTRL <] */
-            Keyboard.press(KEY_LEFT_ALT);
-            Keyboard.press(KEY_TAB);
+            /* Keyboard.press(KEY_LEFT_ALT); */
+            /* Keyboard.press(KEY_TAB); */
+            Keyboard.press(KEY_RIGHT_ALT);      /* RALT被映射成了LWIN */
+            Keyboard.press(KEY_LEFT_SHIFT);
+            Keyboard.press(KEY_LEFT_ARROW);
         } else {
             /* Serial.println("up"); */
-            Keyboard.release(KEY_TAB);
+            /* Keyboard.release(KEY_TAB); */
             /* Keyboard.release(KEY_LEFT_GUI); */
-            Keyboard.release(KEY_LEFT_ALT);
+            /* Keyboard.release(KEY_LEFT_ALT); */
+            Keyboard.release(KEY_LEFT_ARROW);
+            Keyboard.release(KEY_LEFT_SHIFT);
+            Keyboard.release(KEY_RIGHT_ALT);
         }
     }
 }
